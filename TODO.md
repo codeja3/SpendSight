@@ -10,9 +10,9 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] Create basic directory structure (`/ingest`, `/src/go`, `/src/python`, `/tests/go`, `/tests/python`).
 
 ### Task 2: Database Initialization (TDD)
-- [ ] **Test:** Write `db_test.go` to verify SQLite connection and schema creation.
-- [ ] **Implement:** Write `db.go` to execute the schema creation defined in `SPEC.md`.
-- [ ] **Refactor:** Ensure context managers/defensive programming are used for DB connections.
+- [x] **Test:** Write `db_test.go` to verify SQLite connection and schema creation.
+- [x] **Implement:** Write `db.go` to execute the schema creation defined in `SPEC.md`.
+- [x] **Refactor:** Ensure context managers/defensive programming are used for DB connections.
 
 ### Task 3: JSON Payload Ingestion (TDD)
 - [ ] **Test:** Write `ingest_test.go` using a mock JSON payload (matching `SPEC.md`) to verify successful parsing into Go structs.
