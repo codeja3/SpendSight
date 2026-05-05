@@ -15,8 +15,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Refactor:** Ensure context managers/defensive programming are used for DB connections.
 
 ### Task 3: JSON Payload Ingestion (TDD)
-- [ ] **Test:** Write `ingest_test.go` using a mock JSON payload (matching `SPEC.md`) to verify successful parsing into Go structs.
-- [ ] **Implement:** Write `ingest.go` to unmarshal the Python JSON output.
+- [x] **Test:** Write `ingest_test.go` using a mock JSON payload (matching `SPEC.md`) to verify successful parsing into Go structs.
+- [x] **Implement:** Write `ingest.go` to unmarshal the Python JSON output.
 
 ### Task 4: Database Insertion (TDD)
 - [ ] **Test:** Write `insert_test.go` to verify the parsed Go structs are correctly inserted into the `transactions` table.
