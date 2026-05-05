@@ -4,10 +4,10 @@
 This phase focuses on building the "dumb pipe"—the Go orchestrator that watches the directory, executes the Python script, and saves the resulting JSON payload into the SQLite database.
 
 ### Task 1: Project Scaffolding
-- [ ] Initialize Git repository.
-- [ ] Initialize Go module (`go mod init spendsight`).
-- [ ] Initialize Python environment (`uv venv` and `uv pip install polars pydantic pdfplumber instructor`).
-- [ ] Create basic directory structure (`/ingest`, `/src/go`, `/src/python`, `/tests/go`, `/tests/python`).
+- [x] Initialize Git repository.
+- [x] Initialize Go module (`go mod init spendsight`).
+- [x] Initialize Python environment (`uv venv` and `uv pip install polars pydantic pdfplumber instructor`).
+- [x] Create basic directory structure (`/ingest`, `/src/go`, `/src/python`, `/tests/go`, `/tests/python`).
 
 ### Task 2: Database Initialization (TDD)
 - [ ] **Test:** Write `db_test.go` to verify SQLite connection and schema creation.
