@@ -30,10 +30,14 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ---
 
 ## Phase 2: Extraction Pipeline (Python)
-*(Tasks to be defined upon completion of Phase 1)*
+### Task 6: Profile Configuration Loader (TDD)
+- [ ] **Test:** Write `test_config.py` to verify YAML loading and strict Pydantic validation.
+- [ ] **Implement:** Write `config.py` to parse `configs.yaml` and Fail-Fast on missing profiles.
 
-## Phase 3: Transformation & Normalization (LLM)
-*(Tasks to be defined upon completion of Phase 2)*
+### Task 7: Data Ingestion & Canonical Normalization (TDD)
+- [ ] **Test:** Write `test_ingest.py` to verify CSV/PDF parsing into a Polars DataFrame.
+- [ ] **Implement:** Write `ingest.py` to map raw columns and enforce the Canonical Sign Standard via the profile's `sign_multiplier`.
 
-## Phase 4: Visualization (Textual Dashboard)
-*(Tasks to be defined upon completion of Phase 3)*
+### Task 8: Python CLI Entrypoint (TDD)
+- [ ] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
+- [ ] **Implement:** Write `pipeline.py` to wire the config and ingest modules together and print the final JSON to stdout.
