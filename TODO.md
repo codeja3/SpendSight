@@ -23,9 +23,9 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Write the `InsertTransactions` function.
 
 ### Task 5: The File Watcher & Orchestrator (TDD)
-- [ ] **Test:** Write `watcher_test.go` to simulate a file drop and verify it triggers the mock CLI command.
-- [ ] **Implement:** Write `watcher.go` to monitor the `/ingest` directory and execute the Python pipeline via standard CLI execution (`--mock` flag for now).
-- [ ] **Implement:** Add the secure deletion routine to permanently remove the file upon successful DB commit.
+- [x] **Test:** Write `watcher_test.go` to simulate a file drop and verify it triggers the mock CLI command.
+- [x] **Implement:** Write `watcher.go` to monitor the `/ingest` directory and execute the Python pipeline via standard CLI execution (`--mock` flag for now).
+- [x] **Implement:** Add the secure deletion routine to permanently remove the file upon successful DB commit.
 
 ---
 
