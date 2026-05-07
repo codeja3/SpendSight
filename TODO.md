@@ -19,8 +19,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Write `ingest.go` to unmarshal the Python JSON output.
 
 ### Task 4: Database Insertion (TDD)
-- [ ] **Test:** Write `insert_test.go` to verify the parsed Go structs are correctly inserted into the `transactions` table.
-- [ ] **Implement:** Write the `InsertTransactions` function.
+- [x] **Test:** Write `insert_test.go` to verify the parsed Go structs are correctly inserted into the `transactions` table.
+- [x] **Implement:** Write the `InsertTransactions` function.
 
 ### Task 5: The File Watcher & Orchestrator (TDD)
 - [ ] **Test:** Write `watcher_test.go` to simulate a file drop and verify it triggers the mock CLI command.
