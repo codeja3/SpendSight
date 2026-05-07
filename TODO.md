@@ -31,8 +31,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 
 ## Phase 2: Extraction Pipeline (Python)
 ### Task 6: Profile Configuration Loader (TDD)
-- [ ] **Test:** Write `test_config.py` to verify YAML loading and strict Pydantic validation.
-- [ ] **Implement:** Write `config.py` to parse `configs.yaml` and Fail-Fast on missing profiles.
+- [x] **Test:** Write `test_config.py` to verify YAML loading and strict Pydantic validation.
+- [x] **Implement:** Write `config.py` to parse `configs.yaml` and Fail-Fast on missing profiles.
 
 ### Task 7: Data Ingestion & Canonical Normalization (TDD)
 - [ ] **Test:** Write `test_ingest.py` to verify CSV/PDF parsing into a Polars DataFrame.
