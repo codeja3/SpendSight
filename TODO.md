@@ -35,8 +35,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Write `config.py` to parse `configs.yaml` and Fail-Fast on missing profiles.
 
 ### Task 7: Data Ingestion & Canonical Normalization (TDD)
-- [ ] **Test:** Write `test_ingest.py` to verify CSV/PDF parsing into a Polars DataFrame.
-- [ ] **Implement:** Write `ingest.py` to map raw columns and enforce the Canonical Sign Standard via the profile's `sign_multiplier`.
+- [x] **Test:** Write `test_ingest.py` to verify CSV/PDF parsing into a Polars DataFrame.
+- [x] **Implement:** Write `ingest.py` to map raw columns and enforce the Canonical Sign Standard via the profile's `sign_multiplier`.
 
 ### Task 8: Python CLI Entrypoint (TDD)
 - [ ] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
