@@ -46,3 +46,16 @@ def normalize_vendor(raw_description: str) -> TransactionEntity:
     )
     
     return entity
+
+def normalize_transactions(raw_descriptions: list[str]) -> list[TransactionEntity]:
+    """
+    Takes a list of raw vendor descriptions and processes them sequentially through the LLM.
+    Returns a list of structured TransactionEntity objects in the same order.
+    """
+    # We process sequentially to prevent overloading local hardware VRAM.
+    # Concurrent requests to a local model require complex queue management.
+    entities = []
+    for desc in raw_descriptions:
+        entities.append(normalize_vendor(desc))
+        
+    return entities

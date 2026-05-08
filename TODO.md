@@ -50,8 +50,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Write `llm.py` configuring the `instructor` client to target local `gemma4:e2b` and define the `TransactionEntity` schema.
 
 ### Task 10: Batch Normalization (TDD)
-- [ ] **Test:** Write tests for processing a list of raw transaction strings into structured entities.
-- [ ] **Implement:** Add a `normalize_transactions` function to handle the LLM batching loop gracefully.
+- [x] **Test:** Write tests for processing a list of raw transaction strings into structured entities.
+- [x] **Implement:** Add a `normalize_transactions` function to handle the LLM batching loop gracefully.
 
 ### Task 11: Pipeline Integration
 - [ ] **Test:** Update CLI tests to handle the live LLM execution path.
