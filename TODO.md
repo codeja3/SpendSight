@@ -39,5 +39,5 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Write `ingest.py` to map raw columns and enforce the Canonical Sign Standard via the profile's `sign_multiplier`.
 
 ### Task 8: Python CLI Entrypoint (TDD)
-- [ ] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
-- [ ] **Implement:** Write `pipeline.py` to wire the config and ingest modules together and print the final JSON to stdout.
+- [x] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
+- [x] **Implement:** Write `pipeline.py` to wire the config and ingest modules together and print the final JSON to stdout.
