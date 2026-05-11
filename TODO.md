@@ -54,5 +54,5 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Add a `normalize_transactions` function to handle the LLM batching loop gracefully.
 
 ### Task 11: Pipeline Integration
-- [ ] **Test:** Update CLI tests to handle the live LLM execution path.
-- [ ] **Implement:** Wire the LLM normalization step into `pipeline.py` between ingestion and JSON output.
+- [x] **Test:** Update CLI tests to handle the live LLM execution path.
+- [x] **Implement:** Wire the LLM normalization step into `pipeline.py` between ingestion and JSON output.

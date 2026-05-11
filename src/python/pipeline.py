@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 from src.python.config import load_profile
 from src.python.ingest import ingest_statement
+from src.python.llm import normalize_transactions
 
 def main():
     parser = argparse.ArgumentParser(description="SpendSight Extraction Pipeline")
@@ -24,14 +25,13 @@ def main():
             # 1. Load the profile and ingest the file
             profile = load_profile(args.profile, config_path=args.config)
             df = ingest_statement(args.input, profile)
+            
+            file_path = Path(args.input)
+            # Strip the leading dot from the suffix (e.g., '.pdf' -> 'pdf')
+            format_str = file_path.suffix.lower().replace('.', '')
 
             # 2. Handle Mock Mode (Phase 1 & 2 boundary)
             if args.mock:
-                file_path = Path(args.input)
-                # Strip the leading dot from the suffix (e.g., '.pdf' -> 'pdf')
-                format_str = file_path.suffix.lower().replace('.', '')
-                
-                # Construct the exact JSON payload defined in SPEC.md
                 mock_payload = {
                     "metadata": {
                         "source_file": file_path.name,
@@ -48,13 +48,42 @@ def main():
                         }
                     ]
                 }
-                
-                # Print to stdout and exit cleanly for the Go orchestrator
                 print(json.dumps(mock_payload, indent=2))
                 sys.exit(0)
+                
+            # 3. Handle Live LLM Mode (Phase 3 Integration)
             else:
-                # We will build this in Phase 3
-                raise NotImplementedError("Live LLM extraction is deferred to Phase 3. Please use --mock.")
+                # Extract columns to native Python lists for processing
+                raw_descriptions = df["raw_description"].to_list()
+                dates = df["date"].to_list()
+                amounts = df["amount"].to_list()
+                
+                # Send the batch to the local Ollama instance
+                entities = normalize_transactions(raw_descriptions)
+                
+                # Zip the LLM entities back together with the original data
+                transactions = []
+                for i in range(len(df)):
+                    transactions.append({
+                        "date": str(dates[i]),
+                        "amount": float(amounts[i]),
+                        "raw_description": raw_descriptions[i],
+                        "vendor": entities[i].vendor,
+                        "category": entities[i].category
+                    })
+                    
+                live_payload = {
+                    "metadata": {
+                        "source_file": file_path.name,
+                        "format": format_str,
+                        "processed_records": len(df)
+                    },
+                    "transactions": transactions
+                }
+                
+                # Print to stdout and exit cleanly for the Go orchestrator
+                print(json.dumps(live_payload, indent=2))
+                sys.exit(0)
                 
         except Exception as e:
             # Defensive Programming: Ensure Go catches the failure
