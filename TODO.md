@@ -63,8 +63,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Define:** Outline the visual layout of the `Textual` UI components (e.g., DataTables for ledgers, Plotext for terminal charts).
 
 ### Task 13: Database Query Layer (TDD)
-- [ ] **Test:** Write tests to verify SQLite aggregation queries (Total Spend by Category, Top Vendors).
-- [ ] **Implement:** Build the Python data access layer to fetch and format these metrics.
+- [x] **Test:** Write tests to verify SQLite aggregation queries (Total Spend by Category, Top Vendors).
+- [x] **Implement:** Build the Python data access layer to fetch and format these metrics.
 
 ### Task 14: Terminal UI Construction (TDD)
 - [ ] **Test:** Write tests to verify the Textual app mounts the correct widgets and loads data states.
