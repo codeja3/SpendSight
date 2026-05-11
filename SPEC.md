@@ -126,3 +126,18 @@ Aggregates total expenses by category to populate high-level charts.
 Drill-down metric for specific budget areas.
 * **Query:** `SELECT vendor as name, SUM(amount) as total_spend FROM transactions WHERE category = ? AND amount < 0 GROUP BY vendor ORDER BY total_spend ASC LIMIT ?`
 * **Parameters:** `target_category` (str), `limit_n` (int)
+
+### 6.3 Visual Layout & UI Components (Textual)
+
+The terminal dashboard will utilize a horizontal split layout to balance detailed transactional data with aggregated analytics.
+
+* **Main Layout Engine:** Textual `Horizontal` grid.
+* **Left Pane (Ledger):** * Consumes 2/3 of terminal width.
+  * Uses Textual's `DataTable` widget for Feature 1.
+* **Right Pane (Analytics):** * Consumes 1/3 of terminal width.
+  * Uses Textual's `TabbedContent` widget to prevent vertical overflow.
+  * **Tab: "Categories"**
+    * Integrates `textual-plotext` for a terminal-based bar chart mapping Feature 2.3.
+    * Includes a `Select` widget triggering Feature 2.4 (Drill-down).
+  * **Tab: "Vendors"**
+    * Vertically stacks UI blocks for Feature 2.1 (Highest Spend) and Feature 2.2 (Lowest Spend).

@@ -60,7 +60,7 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ## Phase 4: Analytics Dashboard (Textual)
 ### Task 12: Dashboard Specification (SDD)
 - [x] **Define:** Update `SPEC.md` to map out the exact SQLite aggregations required for the dashboard.
-- [ ] **Define:** Outline the visual layout of the `Textual` UI components (e.g., DataTables for ledgers, Plotext for terminal charts).
+- [x] **Define:** Outline the visual layout of the `Textual` UI components (e.g., DataTables for ledgers, Plotext for terminal charts).
 
 ### Task 13: Database Query Layer (TDD)
 - [ ] **Test:** Write tests to verify SQLite aggregation queries (Total Spend by Category, Top Vendors).
