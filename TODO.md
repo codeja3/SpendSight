@@ -72,5 +72,5 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 
 ## Phase 5: System Integration & Launch
 ### Task 15: Final Orchestrator Entrypoint
-- [ ] **Implement:** Add the CLI execution block to `src/python/app.py`.
-- [ ] **Implement:** Write `main.go` to route CLI commands (`watch` and `dashboard`) and bind the Python UI to Go's standard streams.
+- [x] **Implement:** Add the CLI execution block to `src/python/app.py`.
+- [x] **Implement:** Write `main.go` to route CLI commands (`watch` and `dashboard`) and bind the Python UI to Go's standard streams.

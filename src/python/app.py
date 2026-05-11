@@ -118,3 +118,16 @@ class SpendSightApp(App):
             vendors = self.dal.get_top_vendors_by_category(str(event.value), limit_n=5)
             for v in vendors:
                 drill_table.add_row(v.name, f"${v.total_spend:,.2f}")
+
+if __name__ == "__main__":
+    import os
+    
+    # We default to a local SQLite file, but allow an environment variable override
+    db_path = os.getenv("SPENDSIGHT_DB", "spendsight.db")
+    
+    # Instantiate the DAL and inject it into the Textual App
+    dal = SpendSightDAL(db_path)
+    app = SpendSightApp(dal=dal)
+    
+    # Launch the terminal UI
+    app.run()

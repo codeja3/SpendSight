@@ -3,7 +3,12 @@ package db
 import (
 	"database/sql"
 	"fmt"
+
+	// The blank identifier '_' registers the driver with database/sql
+	_ "github.com/mattn/go-sqlite3"
 )
+
+// ... rest of your db.go code remains exactly the same ...
 
 const createTableQuery = `
 CREATE TABLE IF NOT EXISTS transactions (
