@@ -99,3 +99,30 @@ class AggregateRow(BaseModel):
     name: str 
     total_spend: float
 ```
+
+### 6.2 Feature Queries
+
+**Feature 1: Ledger View**
+Retrieves chronological transactions for the main data table, supporting pagination.
+* **Query:** `SELECT transaction_date AS date, vendor, category, amount FROM transactions ORDER BY transaction_date DESC LIMIT ? OFFSET ?`
+* **Parameters:** `limit` (int), `offset` (int)
+
+**Feature 2.1: Top-N Vendors (Highest Spend)**
+Retrieves the vendors with the most negative sum (highest expenses).
+* **Query:** `SELECT vendor as name, SUM(amount) as total_spend FROM transactions WHERE amount < 0 GROUP BY vendor ORDER BY total_spend ASC LIMIT ?`
+* **Parameters:** `limit_n` (int)
+
+**Feature 2.2: Bottom-N Vendors (Lowest Spend)**
+Retrieves the vendors with the sum closest to zero (lowest expenses).
+* **Query:** `SELECT vendor as name, SUM(amount) as total_spend FROM transactions WHERE amount < 0 GROUP BY vendor ORDER BY total_spend DESC LIMIT ?`
+* **Parameters:** `limit_n` (int)
+
+**Feature 2.3: Top-N Categories**
+Aggregates total expenses by category to populate high-level charts.
+* **Query:** `SELECT category as name, SUM(amount) as total_spend FROM transactions WHERE amount < 0 GROUP BY category ORDER BY total_spend ASC LIMIT ?`
+* **Parameters:** `limit_n` (int)
+
+**Feature 2.4: Top-N Vendors Within a Category**
+Drill-down metric for specific budget areas.
+* **Query:** `SELECT vendor as name, SUM(amount) as total_spend FROM transactions WHERE category = ? AND amount < 0 GROUP BY vendor ORDER BY total_spend ASC LIMIT ?`
+* **Parameters:** `target_category` (str), `limit_n` (int)
