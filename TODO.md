@@ -67,5 +67,5 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Build the Python data access layer to fetch and format these metrics.
 
 ### Task 14: Terminal UI Construction (TDD)
-- [ ] **Test:** Write tests to verify the Textual app mounts the correct widgets and loads data states.
-- [ ] **Implement:** Build the `Textual` application and wire it to the query layer.
+- [x] **Test:** Write tests to verify the Textual app mounts the correct widgets and loads data states.
+- [x] **Implement:** Build the `Textual` application and wire it to the query layer.
