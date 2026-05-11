@@ -1,2 +1,14 @@
+# Database
+spendsight.db
+
+# Ingestion folder (don't track real PDFs/CSVs)
+/ingest/*
+!/ingest/.gitkeep
+
+# Python Virtual Environment
 .venv/
 __pycache__/
+*.pyc
+
+# Go compiled binary
+spendsight
