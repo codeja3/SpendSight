@@ -69,3 +69,8 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ### Task 14: Terminal UI Construction (TDD)
 - [x] **Test:** Write tests to verify the Textual app mounts the correct widgets and loads data states.
 - [x] **Implement:** Build the `Textual` application and wire it to the query layer.
+
+## Phase 5: System Integration & Launch
+### Task 15: Final Orchestrator Entrypoint
+- [ ] **Implement:** Add the CLI execution block to `src/python/app.py`.
+- [ ] **Implement:** Write `main.go` to route CLI commands (`watch` and `dashboard`) and bind the Python UI to Go's standard streams.
