@@ -39,5 +39,20 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Write `ingest.py` to map raw columns and enforce the Canonical Sign Standard via the profile's `sign_multiplier`.
 
 ### Task 8: Python CLI Entrypoint (TDD)
-- [ ] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
-- [ ] **Implement:** Write `pipeline.py` to wire the config and ingest modules together and print the final JSON to stdout.
+- [x] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
+- [x] **Implement:** Write `pipeline.py` to wire the config and ingest modules together and print the final JSON to stdout.
+
+--- 
+
+## Phase 3: Transformation & Normalization (LLM)
+### Task 9: LLM Client & Schema Definition (TDD)
+- [x] **Test:** Write `test_llm.py` to mock Ollama and verify Pydantic schema enforcement.
+- [x] **Implement:** Write `llm.py` configuring the `instructor` client to target local `gemma4:e2b` and define the `TransactionEntity` schema.
+
+### Task 10: Batch Normalization (TDD)
+- [x] **Test:** Write tests for processing a list of raw transaction strings into structured entities.
+- [x] **Implement:** Add a `normalize_transactions` function to handle the LLM batching loop gracefully.
+
+### Task 11: Pipeline Integration
+- [ ] **Test:** Update CLI tests to handle the live LLM execution path.
+- [ ] **Implement:** Wire the LLM normalization step into `pipeline.py` between ingestion and JSON output.
