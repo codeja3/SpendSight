@@ -56,3 +56,16 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ### Task 11: Pipeline Integration
 - [x] **Test:** Update CLI tests to handle the live LLM execution path.
 - [x] **Implement:** Wire the LLM normalization step into `pipeline.py` between ingestion and JSON output.
+
+## Phase 4: Analytics Dashboard (Textual)
+### Task 12: Dashboard Specification (SDD)
+- [ ] **Define:** Update `SPEC.md` to map out the exact SQLite aggregations required for the dashboard.
+- [ ] **Define:** Outline the visual layout of the `Textual` UI components (e.g., DataTables for ledgers, Plotext for terminal charts).
+
+### Task 13: Database Query Layer (TDD)
+- [ ] **Test:** Write tests to verify SQLite aggregation queries (Total Spend by Category, Top Vendors).
+- [ ] **Implement:** Build the Python data access layer to fetch and format these metrics.
+
+### Task 14: Terminal UI Construction (TDD)
+- [ ] **Test:** Write tests to verify the Textual app mounts the correct widgets and loads data states.
+- [ ] **Implement:** Build the `Textual` application and wire it to the query layer.

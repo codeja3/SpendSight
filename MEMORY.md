@@ -41,3 +41,10 @@ This document serves as the persistent memory bank for the SpendSight project. I
 ## 5. Security & Privacy
 * **Ephemeral Data:** Source files are permanently deleted immediately after SQLite database commit.
 * **Zero Network Calls:** No financial data leaves the local machine. 
+
+## 6. Phase 4: Analytics Dashboard Decisions
+* **UI Framework:** * *Decision:* Use `Textual` (Python) to build a Terminal UI (TUI).
+  * *Reasoning:* Aligns perfectly with the CLI-Exclusive mandate in `PRD.md`. It avoids the bloat, security concerns, and context-switching of spinning up a local web server (like FastAPI + React or Streamlit), keeping the application entirely within the terminal.
+* **Aggregation Strategy:**
+  * *Decision:* Push all data aggregation (Top-N, groupings, sums) down to the SQLite database via parameterized queries.
+  * *Reasoning:* While `polars` is already in our environment and excellent at aggregations, loading the entire SQLite database into memory just to calculate "Top 5 Vendors" is highly inefficient. Leveraging SQLite's native `GROUP BY` and `ORDER BY` keeps the Python UI layer thin, fast, and memory-safe.

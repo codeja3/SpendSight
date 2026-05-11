@@ -80,3 +80,22 @@ Before data reaches the SQLite database or the LLM, the Python `polars` layer mu
 
 **The Adapter Pattern:**
 To handle varied structures, the system will use an external `configs.yaml` file mapping each account profile to its parsing rules (`skip_rows`, `column_mapping`, `sign_multiplier`).
+
+## 6. Analytics & Dashboard Data Contracts
+
+### 6.1 Schema Definitions
+The Python Data Access Layer (DAL) will return these structures to the Textual UI layer to ensure strict type safety between the database and the frontend.
+
+```python
+from pydantic import BaseModel
+
+class LedgerRow(BaseModel):
+    date: str
+    vendor: str
+    category: str
+    amount: float
+
+class AggregateRow(BaseModel):
+    name: str 
+    total_spend: float
+```
