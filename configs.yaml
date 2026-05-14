@@ -1,0 +1,21 @@
+profiles:
+  # Profile for checking account
+  checking:
+    skip_rows: 0
+    sign_multiplier: 1
+    date_format: "%m/%d/%Y"
+    column_mapping:
+      "Posting Date": "date"
+      "Description": "raw_description"
+      "Amount": "amount"
+
+  # First Credit Card Profile
+  credit_account:
+    skip_rows: 0
+    sign_multiplier: 1
+    date_format: "%m/%d/%Y"
+    column_mapping:
+      "Transaction Date": "date"
+      "Description": "raw_description"
+      "Amount": "amount"
+

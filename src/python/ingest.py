@@ -55,14 +55,20 @@ def ingest_statement(file_path: str, profile: BankProfile) -> pl.DataFrame:
     except Exception as e:
         raise ValueError(f"Column mapping failed. Ensure headers match the profile. Error: {e}")
 
-    # 3. Enforce the Canonical Sign Standard
+    # 3. Enforce the Canonical Sign Standard and Date Normalization
     # PDFs return amounts as strings ("1,500.00"). CSVs often return floats.
     # We cast to String to safely strip commas, then cast to Float64 before multiplying.
-    df = df.with_columns(
+    df = df.with_columns([
         (pl.col("amount")
          .cast(pl.String)
          .str.replace_all(",", "")
-         .cast(pl.Float64) * profile.sign_multiplier).alias("amount")
-    )
+         .cast(pl.Float64) * profile.sign_multiplier).alias("amount"),
+
+        # Normalize Date: Parse based on profile format and cast to string (ISO)
+        (pl.col("date")
+         .str.to_date(format=profile.date_format)
+         .cast(pl.String) # Convert back to ISO string YYYY-MM-DD for JSON/SQLite
+        ).alias("date")
+    ])
 
     return df

@@ -43,6 +43,34 @@ Post Date,Transaction Details,Amount
     assert amounts[0] == -45.50
     assert amounts[1] == 1500.00
 
+def test_ingest_normalizes_dates(tmp_path):
+    # Setup: Profile with a non-ISO date format (MM/DD/YYYY)
+    profile = BankProfile(
+        skip_rows=0,
+        sign_multiplier=1,
+        date_format="%m/%d/%Y",
+        column_mapping={
+            "Date": "date",
+            "Description": "raw_description",
+            "Amount": "amount"
+        }
+    )
+
+    csv_content = """Date,Description,Amount
+05/13/2026,TMOBILE,-153.28
+01/01/2026,OPENING BALANCE,1000.00
+"""
+    csv_file = tmp_path / "dates.csv"
+    csv_file.write_text(csv_content)
+
+    # Execute
+    df = ingest_statement(str(csv_file), profile)
+
+    # Verify
+    dates = df["date"].to_list()
+    assert dates[0] == "2026-05-13" # Normalized to ISO
+    assert dates[1] == "2026-01-01" # Normalized to ISO
+
 def test_ingest_pdf_enforces_canonical_standard(tmp_path):
     # 1. Setup: Create a profile for a standard credit card PDF
     profile = BankProfile(

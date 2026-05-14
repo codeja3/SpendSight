@@ -7,6 +7,7 @@ class BankProfile(BaseModel):
     skip_rows: int
     sign_multiplier: int
     column_mapping: dict[str, str]
+    date_format: str = "%Y-%m-%d" # Default to ISO if not specified
 
 def load_profile(profile_name: str, config_path: str = "configs.yaml") -> BankProfile:
     """Loads and validates a specific bank profile from the YAML config."""
