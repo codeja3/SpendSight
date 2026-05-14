@@ -25,6 +25,7 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ### Task 5: The File Watcher & Orchestrator (TDD)
 - [x] **Test:** Write `watcher_test.go` to simulate a file drop and verify it triggers the mock CLI command.
 - [x] **Implement:** Write `watcher.go` to monitor the `/ingest` directory and execute the Python pipeline via standard CLI execution (`--mock` flag for now).
+- [x] **Refactor:** Implement dynamic profile discovery and exhaustive retry logic ("Symmetric Resilience") to handle non-standard filenames.
 - [x] **Implement:** Add the secure deletion routine to permanently remove the file upon successful DB commit.
 
 ---
@@ -37,10 +38,13 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ### Task 7: Data Ingestion & Canonical Normalization (TDD)
 - [x] **Test:** Write `test_ingest.py` to verify CSV/PDF parsing into a Polars DataFrame.
 - [x] **Implement:** Write `ingest.py` to map raw columns and enforce the Canonical Sign Standard via the profile's `sign_multiplier`.
+- [x] **Refactor:** Implement split Debit/Credit column synthesis.
+- [x] **Refactor:** Implement defensive filtering of null/empty rows to prevent ghost records.
 
 ### Task 8: Python CLI Entrypoint (TDD)
 - [x] **Test:** Write `test_cli.py` to simulate the Go orchestrator's CLI invocation.
 - [x] **Implement:** Write `pipeline.py` to wire the config and ingest modules together and print the final JSON to stdout.
+- [x] **Implement:** Add `list-profiles` command for dynamic Go-to-Python configuration discovery.
 
 --- 
 
@@ -74,3 +78,10 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ### Task 15: Final Orchestrator Entrypoint
 - [x] **Implement:** Add the CLI execution block to `src/python/app.py`.
 - [x] **Implement:** Write `main.go` to route CLI commands (`watch` and `dashboard`) and bind the Python UI to Go's standard streams.
+
+---
+
+## Phase 6: Documentation & Maintenance
+- [x] **Update:** Synchronize `MANUAL.md` with automated setup and resilience features.
+- [x] **Update:** Synchronize `SPEC.md` and `MEMORY.md` with dynamic discovery and split column logic.
+- [x] **Cleanup:** Remove stale `spendsight.db` files and verify data integrity.
