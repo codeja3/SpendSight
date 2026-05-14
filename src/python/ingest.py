@@ -45,6 +45,10 @@ def ingest_statement(file_path: str, profile: BankProfile) -> pl.DataFrame:
     else:
         raise ValueError(f"Unsupported file format: {path.suffix}. Only .csv and .pdf are supported.")
 
+    # 1.5. Defensive Programming: Drop completely null or empty rows 
+    # (prevents ghost records from trailing newlines in bank CSV exports)
+    df = df.filter(~pl.all_horizontal(pl.all().is_null()))
+
     # 2. Map the raw columns to our standard names and drop the rest
     try:
         mapping_exprs = [
