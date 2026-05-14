@@ -73,7 +73,7 @@ The Go orchestrator will trigger the pipeline using the following signature:
 **Python Profile Discovery:**
 To allow the Go orchestrator to dynamically discover available profiles without hardcoding:
 `uv run python -m src.python.pipeline list-profiles`
-* **Success State:** Returns a JSON list of strings representing the keys in `configs.yaml` (e.g., `["checking", "credit_card_2"]`).
+* **Success State:** Returns a JSON list of strings representing the keys in `configs.yaml` (e.g., `["checking", "credit_account_with_split"]`).
 
 ## 5. Account Adapters & Sign Normalization
 Financial institutions use conflicting sign conventions. 

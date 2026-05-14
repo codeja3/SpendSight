@@ -131,8 +131,8 @@ func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, 
 	if strings.Contains(lowerPath, "credit") || 
 	   strings.Contains(lowerPath, "visa") || 
 	   strings.Contains(lowerPath, "mastercard") {
-		// If it's likely a credit card, try credit_card_2 then credit_account
-		initialProfile = "credit_card_2"
+		// If it's likely a credit card, try credit_account_with_split then others
+		initialProfile = "credit_account_with_split"
 	}
 
 	// 3. Execution Loop with Exhaustive Retry
