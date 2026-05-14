@@ -141,3 +141,25 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
     * Includes a `Select` widget triggering Feature 2.4 (Drill-down).
   * **Tab: "Vendors"**
     * Vertically stacks UI blocks for Feature 2.1 (Highest Spend) and Feature 2.2 (Lowest Spend).
+
+## 7. Orchestrator File Watcher
+
+The Go orchestrator must provide a resilient file watching mechanism to automate the ingestion pipeline.
+
+### 7.1 Monitor Behavior
+* **Target Directory:** `/ingest` (Relative to project root).
+* **Event Triggers:** `Create` or `Rename` (Move-in) events.
+* **Supported Extensions:** `.pdf`, `.csv` (Case-insensitive).
+* **Debounce:** The orchestrator should wait for a short period (e.g., 500ms) after an event to ensure the file is fully written/transferred before triggering the pipeline.
+
+### 7.2 Execution Loop
+1. **Detect:** A new supported file appears in `/ingest`.
+2. **Profile Mapping:** The orchestrator must determine the correct bank profile. If multiple profiles exist, it should attempt to match the filename or default to a "standard" profile (to be refined in Phase 2). For now, it will pass a `--profile` flag based on a simple naming convention or a default.
+3. **Invoke:** Execute the Python pipeline: `uv run python -m src.pipeline process --input <path> --profile <profile>`.
+4. **Outcome Handling:**
+    * **Success (Exit Code 0):** Parse the JSON from `stdout`, insert into SQLite, and **permanently delete** the source file.
+    * **Failure (Exit Code != 0):** Log the error from `stderr` to the terminal and **retain** the source file in `/ingest` for manual review.
+
+### 7.3 Concurrency & Safety
+* **Sequential Processing:** To maintain database integrity and simple logging, files must be processed one at a time. If multiple files are dropped, they should be queued.
+* **Initialization Scan:** Upon starting the `watch` command, the orchestrator must perform an initial scan of the `/ingest` directory and process any existing files before entering the event-listening loop.

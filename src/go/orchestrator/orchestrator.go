@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"os/exec"
 	"spendsight/src/go/db"
 	"spendsight/src/go/pipeline"
 )
@@ -11,6 +12,21 @@ import (
 // CommandExecutor defines the signature for calling the Python script.
 // This allows us to inject a mock executor during unit tests.
 type CommandExecutor func(filePath string, profile string) ([]byte, error)
+
+// PythonExecutor is the real implementation that triggers the Python processing script via UV.
+func PythonExecutor(filePath string, profile string) ([]byte, error) {
+	// Signatures match the CLI Interface defined in SPEC.md
+	cmd := exec.Command("uv", "run", "python", "-m", "src.python.pipeline", "process", "--input", filePath, "--profile", profile, "--output", "stdout")
+	
+	output, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("python script failed: %s", string(exitErr.Stderr))
+		}
+		return nil, err
+	}
+	return output, nil
+}
 
 // ProcessFile coordinates the pipeline: extracts JSON, inserts to DB, and deletes the file.
 func ProcessFile(filePath string, profile string, database *sql.DB, execCmd CommandExecutor) error {

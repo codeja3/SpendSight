@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"spendsight/src/go/db"
+	"spendsight/src/go/orchestrator"
+	"syscall"
 )
 
 func main() {
@@ -21,7 +24,7 @@ func main() {
 	case "dashboard":
 		launchDashboard()
 	case "watch":
-		fmt.Println("SpendSight Watcher initialized. Monitoring /ingest directory for statements...")
+		startWatcher()
 	default:
 		fmt.Printf("Unknown command: '%s'\n\n", command)
 		printUsage()
@@ -38,6 +41,44 @@ func initDatabase() {
 		os.Exit(1)
 	}
 	fmt.Println("Success! 'spendsight.db' is ready.")
+}
+
+func startWatcher() {
+	// 1. Ensure /ingest exists
+	if _, err := os.Stat("./ingest"); os.IsNotExist(err) {
+		err := os.Mkdir("./ingest", 0755)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to create /ingest directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
+	// 2. Open DB Connection
+	database, err := db.InitDB("spendsight.db")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer database.Close()
+
+	// 3. Setup termination signaling
+	stopChan := make(chan struct{})
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		fmt.Println("\nStopping SpendSight Watcher...")
+		close(stopChan)
+	}()
+
+	// 4. Start the Watcher (Blocking call)
+	fmt.Println("SpendSight Watcher active. Drop PDF or CSV statements into './ingest'.")
+	err = orchestrator.StartWatcher("./ingest", database, orchestrator.PythonExecutor, stopChan)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Watcher encountered a fatal error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func launchDashboard() {
