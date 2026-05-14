@@ -48,3 +48,17 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * **Aggregation Strategy:**
   * *Decision:* Push all data aggregation (Top-N, groupings, sums) down to the SQLite database via parameterized queries.
   * *Reasoning:* While `polars` is already in our environment and excellent at aggregations, loading the entire SQLite database into memory just to calculate "Top 5 Vendors" is highly inefficient. Leveraging SQLite's native `GROUP BY` and `ORDER BY` keeps the Python UI layer thin, fast, and memory-safe.
+
+## 7. Go Orchestrator Implementation (Phase 1)
+* **File Watching Technology:**
+  * *Decision:* Used `github.com/fsnotify/fsnotify` for the Go watcher.
+  * *Reasoning:* It is the industry standard for cross-platform file system notifications in Go.
+* **Resiliency & Data Integrity:**
+  * *Decision:* Implemented a 500ms debounce and a sequential processing queue.
+  * *Reasoning:* Debouncing prevents triggering the pipeline on partial file writes (common with large PDFs). A sequential queue ensures that database transactions are processed one at a time, preventing "database is locked" errors in SQLite during bulk file drops.
+* **Initialization Behavior:**
+  * *Decision:* The watcher performs an "Initial Scan" of `/ingest` before entering the event loop.
+  * *Reasoning:* Ensures that files already present when the app starts are not ignored, maintaining the "ephemeral data" rule for all files.
+* **Error Handling & Ephemerality:**
+  * *Decision:* The source file is deleted ONLY on a successful (Exit Code 0) pipeline run.
+  * *Reasoning:* Prevents data loss if the LLM inference fails or if a file is malformed.
