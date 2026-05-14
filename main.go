@@ -72,9 +72,9 @@ func startWatcher() {
 		close(stopChan)
 	}()
 
-	// 4. Start the Watcher (Blocking call)
+		// 4. Start the Watcher (Blocking call)
 	fmt.Println("SpendSight Watcher active. Drop PDF or CSV statements into './ingest'.")
-	err = orchestrator.StartWatcher("./ingest", database, orchestrator.PythonExecutor, stopChan)
+	err = orchestrator.StartWatcher("./ingest", database, orchestrator.PythonExecutor, orchestrator.GetAvailableProfiles, stopChan)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Watcher encountered a fatal error: %v\n", err)
 		os.Exit(1)

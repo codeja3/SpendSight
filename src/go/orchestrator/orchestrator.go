@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -26,6 +27,27 @@ func PythonExecutor(filePath string, profile string) ([]byte, error) {
 		return nil, err
 	}
 	return output, nil
+}
+
+// GetAvailableProfiles queries the Python script for the list of profiles in configs.yaml.
+func GetAvailableProfiles() ([]string, error) {
+	cmd := exec.Command("uv", "run", "python", "-m", "src.python.pipeline", "list-profiles")
+	
+	// We ensure we run from the project root if possible, 
+	// but usually the app is executed from the root.
+	output, err := cmd.Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("profile discovery failed (stderr: %s): %w", string(exitErr.Stderr), err)
+		}
+		return nil, fmt.Errorf("profile discovery failed: %w", err)
+	}
+
+	var profiles []string
+	if err := json.Unmarshal(output, &profiles); err != nil {
+		return nil, fmt.Errorf("failed to parse profile list: %w", err)
+	}
+	return profiles, nil
 }
 
 // ProcessFile coordinates the pipeline: extracts JSON, inserts to DB, and deletes the file.

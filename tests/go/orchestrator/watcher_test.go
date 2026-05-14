@@ -28,12 +28,15 @@ func TestWatcher_Success(t *testing.T) {
 	}
 	defer database.Close()
 
-	// 3. Mock Command Executor
+	// 3. Mock Command Executor and Profile Discovery
 	mockExecutor := func(filePath string, profile string) ([]byte, error) {
 		return []byte(`{
 			"metadata": {"source_file": "test.pdf", "format": "pdf", "processed_records": 1},
 			"transactions": [{"date": "2026-04-12", "amount": -10.0, "raw_description": "TEST", "vendor": "Test Vendor", "category": "Dining"}]
 		}`), nil
+	}
+	mockDiscovery := func() ([]string, error) {
+		return []string{"checking", "credit_account"}, nil
 	}
 
 	// 4. Start Watcher in a goroutine
@@ -41,7 +44,7 @@ func TestWatcher_Success(t *testing.T) {
 	stopChan := make(chan struct{})
 	go func() {
 		// StartWatcher should be a blocking call
-		err := orchestrator.StartWatcher(watchDir, database, mockExecutor, stopChan)
+		err := orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, stopChan)
 		if err != nil && err != sql.ErrConnDone { // ErrConnDone is expected on close
 			// In a real test we'd handle this better
 		}
@@ -99,17 +102,20 @@ func TestWatcher_InitialScan(t *testing.T) {
 	}
 	defer database.Close()
 
-	// 3. Mock Command Executor
+	// 3. Mock Command Executor and Profile Discovery
 	mockExecutor := func(filePath string, profile string) ([]byte, error) {
 		return []byte(`{
 			"metadata": {"source_file": "existing.csv", "format": "csv", "processed_records": 1},
 			"transactions": [{"date": "2026-01-01", "amount": -5.0, "raw_description": "Existing", "vendor": "Existing Vendor", "category": "Other"}]
 		}`), nil
 	}
+	mockDiscovery := func() ([]string, error) {
+		return []string{"checking", "credit_account"}, nil
+	}
 
 	// 4. Start Watcher (it should process existing files immediately)
 	stopChan := make(chan struct{})
-	go orchestrator.StartWatcher(watchDir, database, mockExecutor, stopChan)
+	go orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, stopChan)
 
 	// 5. Wait for processing
 	time.Sleep(500 * time.Millisecond)

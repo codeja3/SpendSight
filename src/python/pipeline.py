@@ -18,7 +18,23 @@ def main():
     process_parser.add_argument("--output", required=True, choices=["stdout"], help="Output destination")
     process_parser.add_argument("--mock", action="store_true", help="Bypass LLM and return predefined JSON")
 
+    # The "list-profiles" command for Go discovery
+    list_parser = subparsers.add_parser("list-profiles")
+    list_parser.add_argument("--config", default="configs.yaml", help="Path to the yaml configuration file")
+
     args = parser.parse_args()
+
+    if args.command == "list-profiles":
+        import yaml
+        try:
+            with open(args.config, 'r', encoding='utf-8') as f:
+                config_data = yaml.safe_load(f) or {}
+            profiles = list(config_data.get("profiles", {}).keys())
+            print(json.dumps(profiles))
+            sys.exit(0)
+        except Exception as e:
+            print(f"Discovery Error: {e}", file=sys.stderr)
+            sys.exit(1)
 
     if args.command == "process":
         try:

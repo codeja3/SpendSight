@@ -13,11 +13,14 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+// ProfileDiscovery defines the signature for fetching available bank profiles.
+type ProfileDiscovery func() ([]string, error)
+
 // StartWatcher begins monitoring the target directory for new financial statements.
 // It performs an initial scan before entering the event-listening loop.
-func StartWatcher(dirPath string, database *sql.DB, execCmd CommandExecutor, stopChan <-chan struct{}) error {
+func StartWatcher(dirPath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, stopChan <-chan struct{}) error {
 	// 1. Initial Scan
-	if err := initialScan(dirPath, database, execCmd); err != nil {
+	if err := initialScan(dirPath, database, execCmd, discoverProfiles); err != nil {
 		return fmt.Errorf("initial scan failed: %w", err)
 	}
 
@@ -35,10 +38,10 @@ func StartWatcher(dirPath string, database *sql.DB, execCmd CommandExecutor, sto
 	fmt.Printf("Watching directory: %s\n", dirPath)
 
 	// 3. Watch Loop
-	return watchLoop(watcher, database, execCmd, stopChan)
+	return watchLoop(watcher, database, execCmd, discoverProfiles, stopChan)
 }
 
-func initialScan(dirPath string, database *sql.DB, execCmd CommandExecutor) error {
+func initialScan(dirPath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery) error {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return err
@@ -47,13 +50,13 @@ func initialScan(dirPath string, database *sql.DB, execCmd CommandExecutor) erro
 	for _, entry := range entries {
 		if !entry.IsDir() && isSupportedFile(entry.Name()) {
 			filePath := filepath.Join(dirPath, entry.Name())
-			processWithLog(filePath, database, execCmd)
+			processWithLog(filePath, database, execCmd, discoverProfiles)
 		}
 	}
 	return nil
 }
 
-func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecutor, stopChan <-chan struct{}) error {
+func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, stopChan <-chan struct{}) error {
 	var mu sync.Mutex
 	timers := make(map[string]*time.Timer)
 	
@@ -63,7 +66,7 @@ func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecu
 	// Worker goroutine
 	go func() {
 		for filePath := range queue {
-			processWithLog(filePath, database, execCmd)
+			processWithLog(filePath, database, execCmd, discoverProfiles)
 		}
 	}()
 
@@ -112,34 +115,59 @@ func isSupportedFile(fileName string) bool {
 	return ext == ".pdf" || ext == ".csv"
 }
 
-func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor) {
+func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery) {
 	fmt.Printf("Processing detected file: %s\n", filePath)
 	
-	// 1. Initial Guess logic
+	// 1. Get all available profiles for dynamic retry
+	allProfiles, err := discoverProfiles()
+	if err != nil {
+		log.Printf("ERROR: Could not discover profiles: %v", err)
+		return
+	}
+
+	// 2. Initial Heuristic Guess
 	lowerPath := strings.ToLower(filePath)
-	profile := "checking" 
+	initialProfile := "checking" 
 	if strings.Contains(lowerPath, "credit") || 
 	   strings.Contains(lowerPath, "visa") || 
 	   strings.Contains(lowerPath, "mastercard") {
-		profile = "credit_account"
+		// If it's likely a credit card, try credit_card_2 then credit_account
+		initialProfile = "credit_card_2"
 	}
 
-	// 2. First Attempt
-	err := ProcessFile(filePath, profile, database, execCmd)
+	// 3. Execution Loop with Exhaustive Retry
+	// We start with the initialProfile, then try all others if it fails.
+	tried := make(map[string]bool)
 	
-	// 3. Symmetric Resilience: If the first guess fails, try the other profile
+	// First attempt with the heuristic
+	fmt.Printf("Attempting first pass with profile: %s\n", initialProfile)
+	err = ProcessFile(filePath, initialProfile, database, execCmd)
+	tried[initialProfile] = true
+
 	if err != nil {
-		alternate := "credit_account"
-		if profile == "credit_account" {
-			alternate = "checking"
+		log.Printf("Heuristic profile '%s' failed. Entering exhaustive retry...", initialProfile)
+		
+		success := false
+		for _, profile := range allProfiles {
+			if tried[profile] {
+				continue
+			}
+			
+			log.Printf("Retrying with profile: %s", profile)
+			err = ProcessFile(filePath, profile, database, execCmd)
+			tried[profile] = true
+			
+			if err == nil {
+				success = true
+				break
+			}
 		}
 		
-		log.Printf("Profile '%s' failed for %s. Retrying with '%s'...", profile, filePath, alternate)
-		err = ProcessFile(filePath, alternate, database, execCmd)
-	}
-
-	if err != nil {
-		log.Printf("FAILED to process %s after trying all profiles: %v", filePath, err)
+		if !success {
+			log.Printf("FAILED to process %s after trying all %d profiles.", filePath, len(allProfiles))
+		} else {
+			fmt.Printf("SUCCESSfully processed and deleted: %s\n", filePath)
+		}
 	} else {
 		fmt.Printf("SUCCESSfully processed and deleted: %s\n", filePath)
 	}
