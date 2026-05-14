@@ -56,12 +56,34 @@ def ingest_statement(file_path: str, profile: BankProfile) -> pl.DataFrame:
         raise ValueError(f"Column mapping failed. Ensure headers match the profile. Error: {e}")
 
     # 3. Enforce the Canonical Sign Standard and Date Normalization
-    # PDFs return amounts as strings ("1,500.00"). CSVs often return floats.
-    # We cast to String to safely strip commas, then cast to Float64 before multiplying.
+    # Check for split columns (Debit/Credit) vs single Amount column
+    if "debit" in df.columns and "credit" in df.columns:
+        # Synthesis logic for split columns: amount = Credit - Debit
+        # We must clean both columns first (handle commas, nulls, and empty strings)
+        df = df.with_columns([
+            pl.col("debit").cast(pl.String).str.replace_all(",", "").fill_null("0").alias("debit"),
+            pl.col("credit").cast(pl.String).str.replace_all(",", "").fill_null("0").alias("credit")
+        ])
+        
+        # Convert empty strings to "0" and cast to float
+        df = df.with_columns([
+            pl.when(pl.col("debit") == "").then(pl.lit("0")).otherwise(pl.col("debit")).cast(pl.Float64).alias("debit"),
+            pl.when(pl.col("credit") == "").then(pl.lit("0")).otherwise(pl.col("credit")).cast(pl.Float64).alias("credit")
+        ])
+        
+        # Calculate canonical amount: Deposits (+) - Expenditures (-)
+        df = df.with_columns([
+            (pl.col("credit") - pl.col("debit")).alias("amount")
+        ])
+    
+    # Finalize the 'amount' column (apply sign multiplier and ensure Float64)
+    # This handles both synthesized amounts and directly mapped amounts.
     df = df.with_columns([
         (pl.col("amount")
          .cast(pl.String)
          .str.replace_all(",", "")
+         .fill_null("0")
+         .replace("", "0") # Handle empty strings
          .cast(pl.Float64) * profile.sign_multiplier).alias("amount"),
 
         # Normalize Date: Parse based on profile format and cast to string (ISO)

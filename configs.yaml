@@ -19,3 +19,14 @@ profiles:
       "Description": "raw_description"
       "Amount": "amount"
 
+  # Capital One Style Credit Card (Split Debit/Credit)
+  credit_card_2:
+    skip_rows: 0
+    sign_multiplier: 1
+    date_format: "%Y-%m-%d"
+    column_mapping:
+      "Transaction Date": "date"
+      "Description": "raw_description"
+      "Debit": "debit"
+      "Credit": "credit"
+
