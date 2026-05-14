@@ -29,26 +29,22 @@ Open your terminal and navigate to your preferred projects folder.
 ```bash
 git clone <your-repository-url> spendsight
 cd spendsight
-
-# Create the required ingestion directory if it doesn't exist
-mkdir -p ingest
 ```
 
-⚠️ CRITICAL: Create the Ingestion Dropzone
-Because Git does not track empty folders, you must manually create the ingest directory in the root of your project. This folder acts as the "dropzone" for your bank statements. The Go watcher will monitor this specific folder and crash if it does not exist.
+*Note: The system will automatically create an `/ingest` directory in the root of your project on first run if it doesn't already exist. This folder acts as the "dropzone" for your bank statements.*
 
 
 **Step 2: Initialize the Local AI Model**
-SpendSight requires a small, fast language model to normalize your transactions without sending your data to the cloud. We use gemma4:e2b (or your preferred equivalent SLM).  
+SpendSight requires a small, fast language model to normalize your transactions without sending your data to the cloud. We use gemma4:e2b.
 
 ```bash
-# Make sure ollama is active in the background 
+# Start the ollama server (keep this running in a separate terminal window)
 ollama serve
 
-# Pull the model to your local machine (this may take a few minutes depending on your internet speed)
+# In a new terminal tab, pull the model to your local machine
 ollama pull gemma4:e2b 
 ```
-*(Note: Ollama must be running in the background for SpendSight's Python pipeline to communicate with it).*
+*(Note: Ollama must be running for SpendSight's Python pipeline to communicate with it).*
 
 **Step 3: Build the Python Environment**
 We use uv to create an isolated, extremely fast virtual environment.
@@ -107,7 +103,11 @@ To process new bank statements, you must start the watcher.
 ./spendsight watch
 ```
 
-Leave this running in a terminal tab. Whenever you drop a `.pdf` or `.csv` bank statement into the `/ingest` directory, the Go orchestrator will automatically detect it, trigger the Python AI pipeline, save the clean data to SQLite, and permanently delete the original file to protect your privacy.
+Leave this running in a terminal tab. Whenever you drop a `.pdf` or `.csv` bank statement into the `/ingest` directory, the Go orchestrator will:
+1. **Detect** the file and automatically guess the profile (e.g., checking vs. credit) based on the filename.
+2. **Trigger** the Python AI pipeline to normalize and categorize transactions.
+3. **Retry** with an alternate profile automatically if the first guess fails (Symmetric Resilience).
+4. **Save** the clean data to SQLite and **permanently delete** the original file to protect your privacy.
 
 **2. The Dashboard (Analyzing Spend)**
 To view your financial analytics, run the dashboard command:
