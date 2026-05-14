@@ -114,16 +114,26 @@ func isSupportedFile(fileName string) bool {
 
 func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor) {
 	fmt.Printf("Processing detected file: %s\n", filePath)
-
+	
 	// Basic profile mapping based on filename keywords
 	lowerPath := strings.ToLower(filePath)
-	profile := "checking" // Default to checking
-
-	if strings.Contains(lowerPath, "credit") || strings.Contains(lowerPath, "visa") || strings.Contains(lowerPath, "mastercard") {
+	profile := "checking" // Initial guess
+	
+	// If it contains these keywords, it's likely a credit account
+	if strings.Contains(lowerPath, "credit") || 
+	   strings.Contains(lowerPath, "visa") || 
+	   strings.Contains(lowerPath, "mastercard") ||
+	   strings.Contains(lowerPath, "chase") {
 		profile = "credit_account"
 	}
 
 	err := ProcessFile(filePath, profile, database, execCmd)
+	
+	// Resilience: If 'checking' failed, maybe it was a 'credit_account' without the keywords
+	if err != nil && profile == "checking" {
+		log.Printf("Checking profile failed for %s. Retrying with credit_account...", filePath)
+		err = ProcessFile(filePath, "credit_account", database, execCmd)
+	}
 
 	if err != nil {
 		log.Printf("FAILED to process %s: %v", filePath, err)

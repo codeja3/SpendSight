@@ -17,7 +17,7 @@ def ingest_statement(file_path: str, profile: BankProfile) -> pl.DataFrame:
     # 1. Parse Data Based on File Type
     if path.suffix.lower() == '.csv':
         try:
-            df = pl.read_csv(path, skip_rows=profile.skip_rows)
+            df = pl.read_csv(path, skip_rows=profile.skip_rows, truncate_ragged_lines=True)
         except Exception as e:
             raise ValueError(f"Failed to parse CSV file {file_path}: {e}")
             
