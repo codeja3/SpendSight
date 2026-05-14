@@ -25,8 +25,11 @@ This document serves as the persistent memory bank for the SpendSight project. I
   * *Decision:* Manage individual bank parsing logic (column names, sign multipliers) via a Python-loaded `configs.yaml` file rather than Go or SQLite.
   * *Reasoning:* Adheres to the "smart endpoints, dumb pipes" philosophy. It prevents Go from absorbing complex business logic, keeping it strictly as an orchestrator, while offering a highly readable, easily editable format for adding new bank accounts.
 * **Unknown Statement Handling:**
-    * *Decision:* Gracefully fail and require manual YAML profile creation for Phase 1. Zero-shot LLM profile inference is deferred to Phase 3.
-    * *Reasoning:* Prevents silent data corruption and keeps the initial TDD loop focused on core orchestration rather than edge cases.
+    * *Decision:* Implemented a "Symmetric Resilience" heuristic. The orchestrator attempts a guess based on filename, then exhaustively retries ALL available profiles from `configs.yaml` before failing.
+    * *Reasoning:* Prevents manual intervention for files that match existing profiles but have non-standard names.
+* **Split Amount Columns Synthesis:**
+    * *Decision:* Synthesize a canonical `amount` from `Debit` and `Credit` columns in the Python layer if a single `Amount` column is missing.
+    * *Reasoning:* Common in some bank exports (e.g., Capital One). Keeps the database schema simple while supporting varied source formats.
 
 
 ## 3. Methodological Commitments
@@ -56,9 +59,20 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * **Resiliency & Data Integrity:**
   * *Decision:* Implemented a 500ms debounce and a sequential processing queue.
   * *Reasoning:* Debouncing prevents triggering the pipeline on partial file writes (common with large PDFs). A sequential queue ensures that database transactions are processed one at a time, preventing "database is locked" errors in SQLite during bulk file drops.
+* **Dynamic Profile Discovery:**
+  * *Decision:* Go queries the Python pipeline (`list-profiles`) to fetch available adapters.
+  * *Reasoning:* Keeps Go "dumb" (not reading YAML) while allowing it to be aware of the configuration state for retry loops.
+* **Exhaustive Retry Heuristic:**
+  * *Decision:* The watcher cycles through all available profiles if the first attempt fails.
+  * *Reasoning:* Maximizes ingestion success rates and minimizes user frustration when filenames are ambiguous.
 * **Initialization Behavior:**
   * *Decision:* The watcher performs an "Initial Scan" of `/ingest` before entering the event loop.
   * *Reasoning:* Ensures that files already present when the app starts are not ignored, maintaining the "ephemeral data" rule for all files.
 * **Error Handling & Ephemerality:**
   * *Decision:* The source file is deleted ONLY on a successful (Exit Code 0) pipeline run.
   * *Reasoning:* Prevents data loss if the LLM inference fails or if a file is malformed.
+
+## 8. Extraction Pipeline Improvements
+* **Defensive Data Cleaning:**
+  * *Decision:* Filter out completely null or empty rows in the `polars` layer.
+  * *Reasoning:* Prevents "ghost" records with `None` values caused by trailing newlines or empty data blocks in bank CSV exports.

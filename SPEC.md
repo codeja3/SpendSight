@@ -70,6 +70,11 @@ The Go orchestrator will trigger the pipeline using the following signature:
 * **Mock Mode:** `uv run python -m src.pipeline process --input /path/to/file.pdf --profile <profile_name> --mock --output stdout`
 *(Bypasses the LLM and returns the predefined JSON contract for testing.)*
 
+**Python Profile Discovery:**
+To allow the Go orchestrator to dynamically discover available profiles without hardcoding:
+`uv run python -m src.python.pipeline list-profiles`
+* **Success State:** Returns a JSON list of strings representing the keys in `configs.yaml` (e.g., `["checking", "credit_card_2"]`).
+
 ## 5. Account Adapters & Sign Normalization
 Financial institutions use conflicting sign conventions. 
 
@@ -77,6 +82,12 @@ Financial institutions use conflicting sign conventions.
 Before data reaches the SQLite database or the LLM, the Python `polars` layer must enforce a strict canonical sign standard:
 * **Expenditures / Debits:** Negative (`-`)
 * **Payments / Deposits:** Positive (`+`)
+
+**Split Column Synthesis:**
+Some institutions provide separate `Debit` and `Credit` columns instead of a single `Amount` column. If a profile maps both `debit` and `credit` standard names, the pipeline synthesizes the canonical amount using: `amount = Credit - Debit`.
+
+**Defensive Filtering:**
+To handle trailing newlines or "junk" rows common in bank CSV exports, the pipeline automatically filters out rows that are entirely null or empty before processing.
 
 **The Adapter Pattern:**
 To handle varied structures, the system will use an external `configs.yaml` file mapping each account profile to its parsing rules (`skip_rows`, `column_mapping`, `sign_multiplier`).
@@ -154,9 +165,14 @@ The Go orchestrator must provide a resilient file watching mechanism to automate
 
 ### 7.2 Execution Loop
 1. **Detect:** A new supported file appears in `/ingest`.
-2. **Profile Mapping:** The orchestrator must determine the correct bank profile. If multiple profiles exist, it should attempt to match the filename or default to a "standard" profile (to be refined in Phase 2). For now, it will pass a `--profile` flag based on a simple naming convention or a default.
-3. **Invoke:** Execute the Python pipeline: `uv run python -m src.pipeline process --input <path> --profile <profile>`.
-4. **Outcome Handling:**
+2. **Discovery:** The orchestrator queries the Python pipeline (`list-profiles`) to get the latest list of available account adapters.
+3. **Heuristic Guess:** The orchestrator determines an `initial_profile` based on filename keywords (e.g., "credit", "visa", "checking").
+4. **Exhaustive Retry (Symmetric Resilience):** 
+    * The orchestrator invokes the pipeline with the `initial_profile`.
+    * **If Success:** Parse JSON, commit to DB, and delete source file.
+    * **If Failure:** The orchestrator iterates through *all* other discovered profiles and retries.
+    * **Final Failure:** If all profiles fail, the error is logged to the terminal and the source file is **retained** in `/ingest` for manual review.
+5. **Outcome Handling:**
     * **Success (Exit Code 0):** Parse the JSON from `stdout`, insert into SQLite, and **permanently delete** the source file.
     * **Failure (Exit Code != 0):** Log the error from `stderr` to the terminal and **retain** the source file in `/ingest` for manual review.
 
