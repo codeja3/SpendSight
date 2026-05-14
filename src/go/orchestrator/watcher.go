@@ -115,28 +115,31 @@ func isSupportedFile(fileName string) bool {
 func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor) {
 	fmt.Printf("Processing detected file: %s\n", filePath)
 	
-	// Basic profile mapping based on filename keywords
+	// 1. Initial Guess logic
 	lowerPath := strings.ToLower(filePath)
-	profile := "checking" // Initial guess
-	
-	// If it contains these keywords, it's likely a credit account
+	profile := "checking" 
 	if strings.Contains(lowerPath, "credit") || 
 	   strings.Contains(lowerPath, "visa") || 
-	   strings.Contains(lowerPath, "mastercard") ||
-	   strings.Contains(lowerPath, "chase") {
+	   strings.Contains(lowerPath, "mastercard") {
 		profile = "credit_account"
 	}
 
+	// 2. First Attempt
 	err := ProcessFile(filePath, profile, database, execCmd)
 	
-	// Resilience: If 'checking' failed, maybe it was a 'credit_account' without the keywords
-	if err != nil && profile == "checking" {
-		log.Printf("Checking profile failed for %s. Retrying with credit_account...", filePath)
-		err = ProcessFile(filePath, "credit_account", database, execCmd)
+	// 3. Symmetric Resilience: If the first guess fails, try the other profile
+	if err != nil {
+		alternate := "credit_account"
+		if profile == "credit_account" {
+			alternate = "checking"
+		}
+		
+		log.Printf("Profile '%s' failed for %s. Retrying with '%s'...", profile, filePath, alternate)
+		err = ProcessFile(filePath, alternate, database, execCmd)
 	}
 
 	if err != nil {
-		log.Printf("FAILED to process %s: %v", filePath, err)
+		log.Printf("FAILED to process %s after trying all profiles: %v", filePath, err)
 	} else {
 		fmt.Printf("SUCCESSfully processed and deleted: %s\n", filePath)
 	}
