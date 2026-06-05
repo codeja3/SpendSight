@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -44,6 +45,20 @@ func initDatabase() {
 }
 
 func startWatcher() {
+	watchFlags := flag.NewFlagSet("watch", flag.ExitOnError)
+	mockFlag := watchFlags.Bool("mock", false, "Run in mock mode (bypasses LLM)")
+	
+	err := watchFlags.Parse(os.Args[2:])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse watch flags: %v\n", err)
+		os.Exit(1)
+	}
+
+	if *mockFlag {
+		orchestrator.IsMock = true
+		fmt.Println("--- MOCK MODE ENABLED ---")
+	}
+
 	// 1. Ensure /ingest exists
 	if _, err := os.Stat("./ingest"); os.IsNotExist(err) {
 		err := os.Mkdir("./ingest", 0755)
@@ -72,7 +87,7 @@ func startWatcher() {
 		close(stopChan)
 	}()
 
-		// 4. Start the Watcher (Blocking call)
+	// 4. Start the Watcher (Blocking call)
 	fmt.Println("SpendSight Watcher active. Drop PDF or CSV statements into './ingest'.")
 	err = orchestrator.StartWatcher("./ingest", database, orchestrator.PythonExecutor, orchestrator.GetAvailableProfiles, stopChan)
 	if err != nil {
@@ -95,9 +110,11 @@ func launchDashboard() {
 
 func printUsage() {
 	fmt.Println("SpendSight: Privacy-First Personal Finance CLI")
-	fmt.Println("Usage: spendsight <command>")
+	fmt.Println("Usage: spendsight <command> [flags]")
 	fmt.Println("\nCommands:")
 	fmt.Println("  init       Initialize the SQLite database schema")
 	fmt.Println("  watch      Monitor the /ingest directory for new statements")
+	fmt.Println("    Flags:")
+	fmt.Println("      --mock  Bypass LLM and return predefined JSON for testing")
 	fmt.Println("  dashboard  Launch the interactive Textual analytics UI")
 }

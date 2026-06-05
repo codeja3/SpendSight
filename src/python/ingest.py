@@ -85,6 +85,7 @@ def ingest_statement(file_path: str, profile: BankProfile) -> pl.DataFrame:
     df = df.with_columns([
         (pl.col("amount")
          .cast(pl.String)
+         .str.strip_chars() # Remove leading/trailing whitespace
          .str.replace_all(",", "")
          .fill_null("0")
          .replace("", "0") # Handle empty strings

@@ -65,9 +65,9 @@ The system boundaries operate exclusively via standard input/output and CLI argu
 
 **Python Extraction Invocation:**
 The Go orchestrator will trigger the pipeline using the following signature:
-`uv run python -m src.pipeline process --input /absolute/path/to/ingest/file.pdf --profile <profile_name> --output stdout`
+`uv run python -m src.python.pipeline process --input /absolute/path/to/ingest/file.pdf --profile <profile_name> --output stdout`
 * **Failure State:** If parsing, profile mapping, or LLM extraction fails, Python must exit with a non-zero status code and write the error trace to `stderr`. Go will catch this and halt the deletion of the source file.
-* **Mock Mode:** `uv run python -m src.pipeline process --input /path/to/file.pdf --profile <profile_name> --mock --output stdout`
+* **Mock Mode:** `uv run python -m src.python.pipeline process --input /path/to/file.pdf --profile <profile_name> --mock --output stdout`
 *(Bypasses the LLM and returns the predefined JSON contract for testing.)*
 
 **Python Profile Discovery:**

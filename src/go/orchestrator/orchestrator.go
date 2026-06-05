@@ -14,10 +14,18 @@ import (
 // This allows us to inject a mock executor during unit tests.
 type CommandExecutor func(filePath string, profile string) ([]byte, error)
 
+// IsMock determines if the Python pipeline should run in mock mode.
+var IsMock bool
+
 // PythonExecutor is the real implementation that triggers the Python processing script via UV.
 func PythonExecutor(filePath string, profile string) ([]byte, error) {
 	// Signatures match the CLI Interface defined in SPEC.md
-	cmd := exec.Command("uv", "run", "python", "-m", "src.python.pipeline", "process", "--input", filePath, "--profile", profile, "--output", "stdout")
+	args := []string{"run", "python", "-m", "src.python.pipeline", "process", "--input", filePath, "--profile", profile, "--output", "stdout"}
+	if IsMock {
+		args = append(args, "--mock")
+	}
+	
+	cmd := exec.Command("uv", args...)
 	
 	output, err := cmd.Output()
 	if err != nil {

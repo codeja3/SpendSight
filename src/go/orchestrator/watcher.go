@@ -130,7 +130,9 @@ func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, 
 	initialProfile := "checking" 
 	if strings.Contains(lowerPath, "credit") || 
 	   strings.Contains(lowerPath, "visa") || 
-	   strings.Contains(lowerPath, "mastercard") {
+	   strings.Contains(lowerPath, "mastercard") ||
+	   strings.Contains(lowerPath, "amex") ||
+	   strings.Contains(lowerPath, "chase") {
 		// If it's likely a credit card, try credit_account_with_split then others
 		initialProfile = "credit_account_with_split"
 	}
@@ -140,7 +142,7 @@ func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, 
 	tried := make(map[string]bool)
 	
 	// First attempt with the heuristic
-	fmt.Printf("Attempting first pass with profile: %s\n", initialProfile)
+	fmt.Printf("Attempting first pass with heuristic profile: %s\n", initialProfile)
 	err = ProcessFile(filePath, initialProfile, database, execCmd)
 	tried[initialProfile] = true
 
