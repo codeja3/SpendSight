@@ -56,7 +56,21 @@ When the Go orchestrator executes the Python extraction pipeline, the Python scr
 ```
 
 ## 3. Local LLM Extraction Schema & Optimization (Pydantic)
-To enforce deterministic output from `gemma4:e2b`, the Python layer will use `Instructor` and `Pydantic`.
+To enforce deterministic output from local small language models (default: `gemma4:e2b`), the Python layer uses `Instructor` and `Pydantic`.
+
+### 3.0 Model Configuration Contract (`configs.yaml`)
+Users configure the local inference model via an optional top-level `llm` block in `configs.yaml`:
+```yaml
+llm:
+  model: "gemma4:e2b" # e.g., llama3.2:3b, phi4, mistral, gemma4:e2b
+```
+* **Schema Definition (`LLMConfig`):**
+  ```python
+  class LLMConfig(BaseModel):
+      model: str = "gemma4:e2b"
+  ```
+* **Fallback Behavior:** If the `llm` block or `model` key is omitted in `configs.yaml`, the system defaults to `"gemma4:e2b"`.
+* **Parameter Propagation:** `load_llm_config(config_path)` parses this block; `pipeline.py` passes the resolved `model` name to `normalize_transactions(..., model=model)` and `normalize_batch(..., model=model)`.
 
 ### Single Entity Schema
 ```python

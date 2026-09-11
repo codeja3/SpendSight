@@ -111,3 +111,17 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ### Task 20: Codebase Hygiene & Redundancy Removal
 - [x] **Cleanup:** Remove redundant `GEMINI.md` in favor of canonical `CONSTITUTION.md`.
 - [x] **Cleanup:** Remove untracked compiled binary `spendsight` from the repository root.
+
+---
+
+## Phase 8: Configurable Local Model Selection (YAML-Driven)
+
+### Task 21: LLM Model Configuration Loader (TDD)
+- [ ] **Test:** Write `test_config.py` tests verifying `load_llm_config` loads custom models and defaults to `gemma4:e2b` if omitted.
+- [ ] **Implement:** Add `LLMConfig` model and `load_llm_config` function to `config.py`.
+- [ ] **Implement:** Add default `llm:` section to `configs.yaml`.
+
+### Task 22: Dynamic Model Routing in Normalization Engine (TDD)
+- [ ] **Test:** Update `test_llm.py` to verify `normalize_vendor`, `normalize_batch`, and `normalize_transactions` use the passed `model` parameter.
+- [ ] **Implement:** Update `llm.py` functions to accept `model: str = "gemma4:e2b"` and forward it to `client.chat.completions.create`.
+- [ ] **Implement:** Update `pipeline.py` to load `LLMConfig` from the specified config file and pass `model` into `normalize_transactions`.
