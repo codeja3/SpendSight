@@ -6,9 +6,11 @@ SpendSight is a locally hosted, privacy-first personal finance application desig
 ## 2. Core Requirements & Scope
 * **Strictly Local Execution:** The entire stack must run locally. External APIs for data processing are strictly prohibited to ensure maximum data privacy.
 * **Multi-Format Statement Ingestion:** The system must accept both CSV files and natively parse tabular data from PDF statements.
-* **Ephemeral Source Data:** Source statement files must be permanently deleted immediately upon successful parsing and database commit.
-* **Vendor Normalization:** Raw, messy transaction strings must be accurately normalized into clean vendor entities and categorized using a local LLM.
+* **Ephemeral Source Data & Dead-Letter Handling:** Source statement files must be permanently deleted immediately upon successful parsing and database commit. Corrupted or unparsable statements that fail all candidate profiles must be safely moved to a quarantine directory (`/ingest/failed/`) with diagnostic logs to prevent processing lockups.
+* **Idempotency & Deduplication:** Re-processing identical or overlapping statements must never create duplicate ledger transactions.
+* **Vendor Normalization & Caching:** Raw, messy transaction strings must be accurately normalized into clean vendor entities and categorized using a local LLM, accelerated by an exact-match local cache and micro-batched inference.
 * **CLI-First Operation:** The application backend, orchestrator, and processing tasks will be executed directly via the Command Line Interface (CLI). Graphical IDEs (like Jupyter Notebooks) are explicitly excluded from the development and execution workflow.
+* **Reproducible Packaging:** Go dependencies are tracked via `go.mod`, and Python dependencies are reproducibly managed using `uv` with a project-level `pyproject.toml`.
 * **Persistent Storage:** A lightweight, local relational database acting as the single source of truth.
 
 ## 3. Architecture & Tech Stack
@@ -44,10 +46,12 @@ sequenceDiagram
 
 ### 3.1 Backend Orchestration & API (Golang)
 * **Role:** Directory monitoring, task orchestration, database connection management, and file lifecycle management.
-* **Key Tasks:** * Watch the `/ingest` directory for incoming files.
+* **Key Tasks:** 
+  * Watch the `/ingest` directory for incoming files.
   * Trigger the Python extraction and processing pipeline via shell execution.
-  * Receive structured JSON payloads and insert them into the database.
-  * Execute secure deletion of the original statement files.
+  * Receive structured JSON payloads and insert them into the database idempotently.
+  * Execute secure deletion of the original statement files on success.
+  * Route unparsable or repeatedly failing statements to `/ingest/failed/` with failure logs.
 
 ### 3.2 Data Extraction & Processing (Python)
 * **Role:** Ingesting raw files, extracting data, and performing heavy data wrangling.
@@ -56,10 +60,11 @@ sequenceDiagram
   * `polars`: For performant, memory-efficient data wrangling and schema standardization.
 * **Local LLM Extraction Layer:**
   * **Inference Server (`Ollama`):** A background CLI process hosting local small language models (e.g., Gemma 4, Phi-4) and exposing a local API. Optimized for Apple Silicon.
-  * **Structuring Framework (`Instructor` or `DSPy`):** Acts as the client within the Python script. Routes the raw transaction strings to the local inference server and enforces strict Pydantic JSON schemas for vendor and category extraction, eliminating the need for fragile regex parsing.
+  * **Structuring Framework (`Instructor` or `DSPy`):** Acts as the client within the Python script. Routes raw transaction strings to the local inference server and enforces strict Pydantic JSON schemas. Employs micro-batching (10–20 items per call) and checks an exact-match local SQLite cache to avoid redundant model inference.
 
 ### 3.3 Storage Layer
 * **Technology:** `SQLite`.
+* **Guarantees:** Unique constraints on transaction date, amount, and raw description prevent duplicate entries on repeated imports. A local vendor cache stores previously normalized descriptions.
 
 ### 3.4 Frontend / Visualization (Python)
 * **Role:** Visualizing spending analytics at the vendor and category level.
@@ -81,9 +86,10 @@ To maintain absolute rigor and context across development sessions, the project 
 1. Statement file is dropped into the `/ingest` directory.
 2. Golang watcher detects the file and triggers the Python pipeline.
 3. Python extracts raw tabular data (`pdfplumber` or `csv`).
-4. 4. Data is loaded into a polars DataFrame, and the specific bank's YAML profile is applied to enforce the Canonical Sign Standard.
-5. `Instructor`/`DSPy` queries the local `Ollama` server to normalize vendor names and map categories into structured Pydantic models.
+4. Data is loaded into a polars DataFrame, and the specific bank's YAML profile is applied to enforce the Canonical Sign Standard.
+5. Python checks the SQLite vendor cache; un-cached transactions are sent in micro-batches via `Instructor`/`DSPy` to the local `Ollama` server for normalization.
 6. Cleaned data is outputted as a structured JSON payload.
-7. Golang verifies data integrity and commits records to SQLite.
-8. Golang securely deletes the original statement file.
-9. User executes the `Textual` dashboard via CLI to query SQLite and view analytics.
+7. Golang verifies data integrity and commits records to SQLite with `INSERT OR IGNORE` deduplication.
+8. If commit succeeds: Golang securely deletes the original statement file.
+9. If processing fails across all candidate profiles: Golang moves the file to `/ingest/failed/` and logs the failure.
+10. User executes the `Textual` dashboard via CLI to query SQLite and view analytics.

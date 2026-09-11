@@ -1,14 +1,42 @@
-# Database
-spendsight.db
+# Operating System & Environment Artifacts
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
 
-# Ingestion folder (don't track real PDFs/CSVs)
+# Ingestion Folder
+# Ephemeral source files should never be committed
 /ingest/*
 !/ingest/.gitkeep
+/ingest/failed/*
+!/ingest/failed/.gitkeep
 
-# Python Virtual Environment
+# Local Relational Database & Backups
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+spendsight.db
+
+# Go Binaries & Build Outputs
+spendsight
+/bin/
+/dist/
+
+# Python Virtual Environment & Bytecode
 .venv/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
 
-# Go compiled binary
-spendsight
+# Local Tooling & Editor Directories
+.idea/
+.vscode/
+*.swp
+*.swo
+.aider*
+.agy/

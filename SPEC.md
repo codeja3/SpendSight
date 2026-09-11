@@ -18,6 +18,20 @@ The database acts as the single source of truth. Schema migrations will be handl
 | `source_format` | `TEXT` | `NOT NULL` | Either 'pdf' or 'csv'. |
 | `ingested_at` | `TEXT` | `NOT NULL DEFAULT CURRENT_TIMESTAMP` | UTC timestamp of when the record was written. |
 
+* **Unique Deduplication Constraint:**
+  `CONSTRAINT uq_transaction UNIQUE (transaction_date, amount, raw_description)`
+* **Insert Policy:**
+  Go orchestrator inserts using `INSERT OR IGNORE INTO transactions ...` ensuring that re-uploaded statements or overlapping date ranges never create duplicate records.
+
+### Table: `vendor_cache`
+Stores previously normalized descriptions to avoid redundant and slow local LLM calls.
+| Column Name | SQLite Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `raw_description` | `TEXT` | `PRIMARY KEY` | Normalized uppercase/trimmed raw description. |
+| `vendor` | `TEXT` | `NOT NULL` | Normalized vendor name. |
+| `category` | `TEXT` | `NOT NULL` | Normalized budget category. |
+| `created_at` | `TEXT` | `NOT NULL DEFAULT CURRENT_TIMESTAMP` | UTC timestamp. |
+
 ## 2. The Python-to-Go JSON Contract
 When the Go orchestrator executes the Python extraction pipeline, the Python script must output a strict JSON payload to `stdout` upon success. The Go watcher parses this payload to execute the database inserts.
 
@@ -41,9 +55,10 @@ When the Go orchestrator executes the Python extraction pipeline, the Python scr
 }
 ```
 
-## 3. Local LLM Extraction Schema (Pydantic)
-To enforce deterministic output from `gemma4:e2b`, the Python layer will use `Instructor` and `Pydantic`. Raw strings are passed to the model, and it must return this exact structure.
+## 3. Local LLM Extraction Schema & Optimization (Pydantic)
+To enforce deterministic output from `gemma4:e2b`, the Python layer will use `Instructor` and `Pydantic`.
 
+### Single Entity Schema
 ```python
 from pydantic import BaseModel, Field
 from typing import Literal
@@ -59,6 +74,19 @@ class TransactionEntity(BaseModel):
         description="The budget category that best fits the vendor."
     )
 ```
+
+### Micro-Batching Schema
+To avoid individual HTTP round-trips for every transaction, un-cached descriptions are batched into chunks of 10–20:
+```python
+class BatchTransactionEntities(BaseModel):
+    items: list[TransactionEntity]
+```
+
+### Normalization Pipeline Flow
+1. **Cache Lookup:** Check incoming `raw_description` against `vendor_cache`.
+2. **Batching:** Collect cache misses into batches of 10–20 items.
+3. **Inference:** Send each batch to Ollama with `response_model=BatchTransactionEntities`.
+4. **Cache Populate:** Upsert newly normalized pairs into `vendor_cache`.
 
 ## 4. CLI Execution Interfaces
 The system boundaries operate exclusively via standard input/output and CLI arguments.
@@ -171,10 +199,10 @@ The Go orchestrator must provide a resilient file watching mechanism to automate
     * The orchestrator invokes the pipeline with the `initial_profile`.
     * **If Success:** Parse JSON, commit to DB, and delete source file.
     * **If Failure:** The orchestrator iterates through *all* other discovered profiles and retries.
-    * **Final Failure:** If all profiles fail, the error is logged to the terminal and the source file is **retained** in `/ingest` for manual review.
+    * **Final Failure:** If all profiles fail, the error is logged to the terminal and the source file is moved to `/ingest/failed/` to prevent infinite re-processing loops while preserving the file for inspection.
 5. **Outcome Handling:**
-    * **Success (Exit Code 0):** Parse the JSON from `stdout`, insert into SQLite, and **permanently delete** the source file.
-    * **Failure (Exit Code != 0):** Log the error from `stderr` to the terminal and **retain** the source file in `/ingest` for manual review.
+    * **Success (Exit Code 0):** Parse the JSON from `stdout`, insert into SQLite (`INSERT OR IGNORE`), and **permanently delete** the source file.
+    * **Failure (Exit Code != 0):** Log the error from `stderr` to the terminal and **move** the unparsable source file into `/ingest/failed/<filename>`.
 
 ### 7.3 Concurrency & Safety
 * **Sequential Processing:** To maintain database integrity and simple logging, files must be processed one at a time. If multiple files are dropped, they should be queued.
