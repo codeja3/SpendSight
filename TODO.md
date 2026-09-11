@@ -91,23 +91,23 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 ## Phase 7: Resilience, Optimization & Architectural Hardening
 
 ### Task 16: Environment & Package Reproducibility
-- [ ] **Implement:** Create `pyproject.toml` with `uv` pinning runtime and dev dependencies.
-- [ ] **Verify:** Execute `uv sync` to ensure fully locked, reproducible virtual environment.
+- [x] **Implement:** Create `pyproject.toml` with `uv` pinning runtime and dev dependencies.
+- [x] **Verify:** Execute `uv sync` to ensure fully locked, reproducible virtual environment.
 
 ### Task 17: Database Deduplication & Idempotent Ingestion (TDD)
-- [ ] **Test:** Write `insert_dedup_test.go` to verify re-inserting duplicate transactions does not produce duplicate rows.
-- [ ] **Implement:** Update SQLite schema with `CONSTRAINT uq_transaction UNIQUE (transaction_date, amount, raw_description)`.
-- [ ] **Implement:** Update `InsertTransactions` in `insert.go` to use `INSERT OR IGNORE`.
+- [x] **Test:** Write `insert_dedup_test.go` to verify re-inserting duplicate transactions does not produce duplicate rows.
+- [x] **Implement:** Update SQLite schema with `CONSTRAINT uq_transaction UNIQUE (transaction_date, amount, raw_description)`.
+- [x] **Implement:** Update `InsertTransactions` in `insert.go` to use `INSERT OR IGNORE`.
 
 ### Task 18: Ingestion Quarantine & Dead-Letter Handling (TDD)
-- [ ] **Test:** Write `watcher_quarantine_test.go` simulating an unparsable statement and verifying it moves to `/ingest/failed/`.
-- [ ] **Implement:** Update `watcher.go` to create `/ingest/failed/` and move failed files on terminal retry failure.
+- [x] **Test:** Write `watcher_quarantine_test.go` simulating an unparsable statement and verifying it moves to `/ingest/failed/`.
+- [x] **Implement:** Update `watcher.go` to create `/ingest/failed/` and move failed files on terminal retry failure.
 
 ### Task 19: Vendor Normalization Cache & Micro-Batching (TDD)
-- [ ] **Test:** Write tests in `test_llm.py` verifying cache lookups and micro-batch payload processing.
-- [ ] **Implement:** Add `vendor_cache` schema in SQLite and lookup/save functions.
-- [ ] **Implement:** Update `llm.py` to batch un-cached transactions (10–20 per request) using `BatchTransactionEntities`.
+- [x] **Test:** Write tests in `test_llm.py` verifying cache lookups and micro-batch payload processing.
+- [x] **Implement:** Add `vendor_cache` schema in SQLite and lookup/save functions.
+- [x] **Implement:** Update `llm.py` to batch un-cached transactions (10–20 per request) using `BatchTransactionEntities`.
 
 ### Task 20: Codebase Hygiene & Redundancy Removal
-- [ ] **Cleanup:** Remove redundant `GEMINI.md` in favor of canonical `CONSTITUTION.md`.
-- [ ] **Cleanup:** Remove untracked compiled binary `spendsight` from the repository root.
+- [x] **Cleanup:** Remove redundant `GEMINI.md` in favor of canonical `CONSTITUTION.md`.
+- [x] **Cleanup:** Remove untracked compiled binary `spendsight` from the repository root.
