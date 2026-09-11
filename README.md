@@ -18,7 +18,7 @@ sequenceDiagram
     participant Dir as /ingest Directory
     participant Go as Go Orchestrator
     participant Py as Python Pipeline
-    participant LLM as Ollama (gemma4:e2b)
+    participant LLM as Ollama (Local SLM)
     participant DB as SQLite
 
     U->>Dir: Drops Statement (PDF/CSV)
@@ -62,6 +62,12 @@ CLI-First Context: Graphical IDEs were entirely eschewed. The entire pipeline, t
 ✅ Phase 4: Analytics Dashboard Data Contracts & Textual UI Construction (SDD/TDD)
 
 ✅ Phase 5: Final Integration & Go CLI Router Routing
+
+✅ Phase 6: Documentation & Maintenance
+
+✅ Phase 7: Resilience, Optimization & Architectural Hardening (Deduplication, Quarantine, Micro-Batching & Caching)
+
+✅ Phase 8: Configurable Local Model Selection (YAML-Driven)
 
 --- 
 

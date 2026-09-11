@@ -35,29 +35,23 @@ cd spendsight
 
 
 **Step 2: Initialize the Local AI Model**
-SpendSight requires a small, fast language model to normalize your transactions without sending your data to the cloud. We use gemma4:e2b.
+SpendSight normalizes your transactions without sending your data to the cloud. By default, it uses `gemma4:e2b`, but you can configure any model installed in Ollama via `configs.yaml`.
 
 ```bash
 # Start the ollama server (keep this running in a separate terminal window)
 ollama serve
 
-# In a new terminal tab, pull the model to your local machine
+# In a new terminal tab, pull your preferred model (default: gemma4:e2b)
 ollama pull gemma4:e2b 
 ```
 *(Note: Ollama must be running for SpendSight's Python pipeline to communicate with it).*
 
 **Step 3: Build the Python Environment**
-We use uv to create an isolated, extremely fast virtual environment.
+We use `uv` with `pyproject.toml` to create a reproducible, locked virtual environment.
 
 ```bash
-# Create the virtual environment
-uv venv
-
-# Activate the environment (macOS/Linux)
-source .venv/bin/activate
-
-# Install the required data and UI libraries
-uv pip install textual textual-plotext instructor polars pdfplumber pydantic pytest-asyncio pyyaml
+# Sync runtime and dev dependencies
+uv sync --extra dev
 ```
 
 **Step 4: Compile the Go Orchestrator**
@@ -105,9 +99,10 @@ To process new bank statements, you must start the watcher.
 
 Leave this running in a terminal tab. Whenever you drop a `.pdf` or `.csv` bank statement into the `/ingest` directory, the Go orchestrator will:
 1. **Detect** the file and automatically guess the profile (e.g., checking vs. credit) based on the filename.
-2. **Trigger** the Python AI pipeline to normalize and categorize transactions.
+2. **Trigger** the Python AI pipeline to normalize and categorize transactions (using local SQLite cache and micro-batching).
 3. **Retry** with an alternate profile automatically if the first guess fails (Symmetric Resilience).
-4. **Save** the clean data to SQLite and **permanently delete** the original file to protect your privacy.
+4. **Save** the clean data to SQLite with deduplication (`INSERT OR IGNORE`) and **permanently delete** the original file on success.
+5. **Quarantine** unparsable files that fail all profiles by safely moving them to `/ingest/failed/`.
 
 **2. The Dashboard (Analyzing Spend)**
 To view your financial analytics, run the dashboard command:
@@ -128,4 +123,6 @@ This launches the native `Textual` UI.
 
 --- 
 
-**Configuration Note**: If you are adding a new bank account format, ensure you update the configs.yaml file with the correct skip_rows, column_mapping, and sign_multiplier to enforce the Canonical Sign Standard before dropping the statement into the /ingest folder.
+**Configuration Notes (`configs.yaml`)**:
+- **Local LLM Model:** Set the model under the top-level `llm:` block (e.g., `model: "llama3.2:3b"` or `model: "gemma4:e2b"`).
+- **Bank Profiles:** When adding new accounts, configure `skip_rows`, `column_mapping`, `date_format`, and `sign_multiplier` to enforce the Canonical Sign Standard before dropping statements into `/ingest`.
