@@ -2,7 +2,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from src.python.config import load_profile
+from src.python.config import load_profile, load_llm_config
 from src.python.ingest import ingest_statement
 from src.python.llm import normalize_transactions
 
@@ -74,8 +74,9 @@ def main():
                 dates = df["date"].to_list()
                 amounts = df["amount"].to_list()
                 
-                # Send the batch to the local Ollama instance
-                entities = normalize_transactions(raw_descriptions)
+                # Send the batch to the local Ollama instance with configured model
+                llm_config = load_llm_config(args.config)
+                entities = normalize_transactions(raw_descriptions, model=llm_config.model)
                 
                 # Zip the LLM entities back together with the original data
                 transactions = []

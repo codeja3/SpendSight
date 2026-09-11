@@ -76,10 +76,10 @@ def _save_cached_vendors(entities: dict[str, TransactionEntity], db_path: str) -
     except Exception:
         pass
 
-def normalize_vendor(raw_description: str) -> TransactionEntity:
+def normalize_vendor(raw_description: str, model: str = "gemma4:e2b") -> TransactionEntity:
     """Sends the raw description to the local LLM and returns a structured entity."""
     entity = client.chat.completions.create(
-        model="gemma4:e2b",
+        model=model,
         response_model=TransactionEntity,
         messages=[
             {
@@ -95,7 +95,7 @@ def normalize_vendor(raw_description: str) -> TransactionEntity:
     )
     return entity
 
-def normalize_batch(raw_descriptions: list[str]) -> list[TransactionEntity]:
+def normalize_batch(raw_descriptions: list[str], model: str = "gemma4:e2b") -> list[TransactionEntity]:
     """Normalizes a micro-batch of raw descriptions in a single LLM call."""
     if not raw_descriptions:
         return []
@@ -104,7 +104,7 @@ def normalize_batch(raw_descriptions: list[str]) -> list[TransactionEntity]:
     content_str = "\n".join(prompt_lines)
 
     batch_result = client.chat.completions.create(
-        model="gemma4:e2b",
+        model=model,
         response_model=BatchTransactionEntities,
         messages=[
             {
@@ -126,7 +126,12 @@ def normalize_batch(raw_descriptions: list[str]) -> list[TransactionEntity]:
         return [batch_result]
     return []
 
-def normalize_transactions(raw_descriptions: list[str], db_path: str = "spendsight.db", batch_size: int = 15) -> list[TransactionEntity]:
+def normalize_transactions(
+    raw_descriptions: list[str],
+    db_path: str = "spendsight.db",
+    batch_size: int = 15,
+    model: str = "gemma4:e2b"
+) -> list[TransactionEntity]:
     """
     Normalizes raw descriptions with SQLite vendor cache lookups and micro-batched LLM calls.
     Maintains exact 1-to-1 input order.
@@ -149,7 +154,7 @@ def normalize_transactions(raw_descriptions: list[str], db_path: str = "spendsig
     newly_resolved: dict[str, TransactionEntity] = {}
     for i in range(0, len(misses), batch_size):
         batch = misses[i : i + batch_size]
-        resolved = normalize_batch(batch)
+        resolved = normalize_batch(batch, model=model)
         for desc, ent in zip(batch, resolved):
             newly_resolved[desc] = ent
 

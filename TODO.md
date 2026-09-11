@@ -122,6 +122,6 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Implement:** Add default `llm:` section to `configs.yaml`.
 
 ### Task 22: Dynamic Model Routing in Normalization Engine (TDD)
-- [ ] **Test:** Update `test_llm.py` to verify `normalize_vendor`, `normalize_batch`, and `normalize_transactions` use the passed `model` parameter.
-- [ ] **Implement:** Update `llm.py` functions to accept `model: str = "gemma4:e2b"` and forward it to `client.chat.completions.create`.
-- [ ] **Implement:** Update `pipeline.py` to load `LLMConfig` from the specified config file and pass `model` into `normalize_transactions`.
+- [x] **Test:** Update `test_llm.py` to verify `normalize_vendor`, `normalize_batch`, and `normalize_transactions` use the passed `model` parameter.
+- [x] **Implement:** Update `llm.py` functions to accept `model: str = "gemma4:e2b"` and forward it to `client.chat.completions.create`.
+- [x] **Implement:** Update `pipeline.py` to load `LLMConfig` from the specified config file and pass `model` into `normalize_transactions`.

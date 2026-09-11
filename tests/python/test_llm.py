@@ -111,3 +111,21 @@ def test_normalize_transactions_with_vendor_cache(tmp_path):
         assert len(cached_rows) == 3
         vendors = {row[1] for row in cached_rows}
         assert vendors == {"Amazon", "Local Coffee Shop", "Uber"}
+
+
+def test_normalize_transactions_custom_model():
+    from src.python.llm import BatchTransactionEntities
+
+    raw_strings = ["SQ *LOCAL COFFEE SHOP"]
+
+    with patch("src.python.llm.client") as mock_client:
+        mock_client.chat.completions.create.return_value = BatchTransactionEntities(
+            items=[TransactionEntity(vendor="Local Coffee Shop", category="Dining")]
+        )
+
+        results = normalize_transactions(raw_strings, db_path=":memory:", model="llama3.2:3b")
+
+        assert len(results) == 1
+        assert mock_client.chat.completions.create.call_count == 1
+        call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert call_kwargs["model"] == "llama3.2:3b"
