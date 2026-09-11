@@ -22,6 +22,8 @@ spendsight.db
 spendsight
 /bin/
 /dist/
+.gopath/
+.gocache/
 
 # Python Virtual Environment & Bytecode
 .venv/
