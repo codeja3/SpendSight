@@ -27,7 +27,7 @@ func InsertTransactions(database *sql.DB, payload *pipeline.Payload) error {
 
 	// Prepare the insert statement for efficiency and security
 	stmt, err := tx.Prepare(`
-		INSERT INTO transactions (
+		INSERT OR IGNORE INTO transactions (
 			transaction_date, amount, raw_description, vendor, category, source_format
 		) VALUES (?, ?, ?, ?, ?, ?)
 	`)

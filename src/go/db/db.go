@@ -19,7 +19,14 @@ CREATE TABLE IF NOT EXISTS transactions (
 	vendor TEXT NOT NULL,
 	category TEXT NOT NULL,
 	source_format TEXT NOT NULL,
-	ingested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+	ingested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	CONSTRAINT uq_transaction UNIQUE (transaction_date, amount, raw_description)
+);
+CREATE TABLE IF NOT EXISTS vendor_cache (
+	raw_description TEXT PRIMARY KEY,
+	vendor TEXT NOT NULL,
+	category TEXT NOT NULL,
+	created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`
 
 // InitDB initializes the SQLite database and enforces the schema
