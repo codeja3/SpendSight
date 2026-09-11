@@ -110,12 +110,25 @@ func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecu
 	}
 }
 
-func isSupportedFile(fileName string) bool {
-	ext := strings.ToLower(filepath.Ext(fileName))
+func isSupportedFile(filePath string) bool {
+	// Never process files inside the quarantine directory (e.g. failed/...)
+	cleanPath := filepath.Clean(filePath)
+	parts := strings.Split(cleanPath, string(filepath.Separator))
+	for _, part := range parts {
+		if part == "failed" {
+			return false
+		}
+	}
+
+	ext := strings.ToLower(filepath.Ext(cleanPath))
 	return ext == ".pdf" || ext == ".csv"
 }
 
 func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery) {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return
+	}
+
 	fmt.Printf("Processing detected file: %s\n", filePath)
 	
 	// 1. Get all available profiles for dynamic retry
@@ -167,10 +180,27 @@ func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, 
 		
 		if !success {
 			log.Printf("FAILED to process %s after trying all %d profiles.", filePath, len(allProfiles))
+			quarantineFile(filePath)
 		} else {
 			fmt.Printf("SUCCESSfully processed and deleted: %s\n", filePath)
 		}
 	} else {
 		fmt.Printf("SUCCESSfully processed and deleted: %s\n", filePath)
 	}
+}
+
+func quarantineFile(filePath string) {
+	parentDir := filepath.Dir(filePath)
+	failedDir := filepath.Join(parentDir, "failed")
+	if err := os.MkdirAll(failedDir, 0755); err != nil {
+		log.Printf("ERROR: Failed to create quarantine directory %s: %v", failedDir, err)
+		return
+	}
+
+	targetPath := filepath.Join(failedDir, filepath.Base(filePath))
+	if err := os.Rename(filePath, targetPath); err != nil {
+		log.Printf("ERROR: Failed to move %s to quarantine %s: %v", filePath, targetPath, err)
+		return
+	}
+	log.Printf("Quarantined unparsable file to: %s", targetPath)
 }
