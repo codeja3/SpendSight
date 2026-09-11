@@ -39,3 +39,31 @@ profiles:
     # Verify: The system must fail-fast with a clear error
     with pytest.raises(ValueError, match="Profile 'missing_bank' not found"):
         load_profile("missing_bank", str(config_file))
+
+
+def test_load_llm_config_custom_model(tmp_path):
+    from src.python.config import load_llm_config
+
+    yaml_content = """
+llm:
+  model: "llama3.2:3b"
+profiles: {}
+"""
+    config_file = tmp_path / "configs.yaml"
+    config_file.write_text(yaml_content)
+
+    llm_cfg = load_llm_config(str(config_file))
+    assert llm_cfg.model == "llama3.2:3b"
+
+
+def test_load_llm_config_defaults_to_gemma(tmp_path):
+    from src.python.config import load_llm_config
+
+    yaml_content = """
+profiles: {}
+"""
+    config_file = tmp_path / "configs.yaml"
+    config_file.write_text(yaml_content)
+
+    llm_cfg = load_llm_config(str(config_file))
+    assert llm_cfg.model == "gemma4:e2b"

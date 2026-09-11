@@ -36,3 +36,26 @@ def load_profile(profile_name: str, config_path: str = "configs.yaml") -> BankPr
         return BankProfile(**profile_data)
     except ValidationError as e:
         raise ValueError(f"Invalid profile configuration for '{profile_name}': {e}")
+
+
+class LLMConfig(BaseModel):
+    model: str = "gemma4:e2b"
+
+
+def load_llm_config(config_path: str = "configs.yaml") -> LLMConfig:
+    """Loads and validates the LLM configuration from the YAML config."""
+    path = Path(config_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    with open(path, 'r', encoding='utf-8') as f:
+        try:
+            config_data = yaml.safe_load(f) or {}
+        except yaml.YAMLError as e:
+            raise ValueError(f"Failed to parse YAML file: {e}")
+
+    llm_data = config_data.get("llm", {})
+    try:
+        return LLMConfig(**llm_data)
+    except ValidationError as e:
+        raise ValueError(f"Invalid LLM configuration in {config_path}: {e}")
