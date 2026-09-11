@@ -30,16 +30,19 @@ def test_normalize_transactions_batch():
         "AMZN MKTP US*8J24O AMZN.COM/BILL"
     ]
     
-    # 2. Setup: Mock the client and use side_effect to return different models in sequence
+    # 2. Setup: Mock the client returning BatchTransactionEntities as defined in SPEC.md
     with patch("src.python.llm.client") as mock_client:
-        mock_client.chat.completions.create.side_effect = [
-            TransactionEntity(vendor="Local Coffee Shop", category="Dining"),
-            TransactionEntity(vendor="Uber", category="Transportation"),
-            TransactionEntity(vendor="Amazon", category="Shopping")
-        ]
+        from src.python.llm import BatchTransactionEntities
+        mock_client.chat.completions.create.return_value = BatchTransactionEntities(
+            items=[
+                TransactionEntity(vendor="Local Coffee Shop", category="Dining"),
+                TransactionEntity(vendor="Uber", category="Transportation"),
+                TransactionEntity(vendor="Amazon", category="Shopping")
+            ]
+        )
         
         # 3. Execute: Call the batch normalization function
-        results = normalize_transactions(raw_strings)
+        results = normalize_transactions(raw_strings, db_path=":memory:")
         
     # 4. Verify: Check that the batch was processed correctly and in order
     assert len(results) == 3
@@ -47,5 +50,64 @@ def test_normalize_transactions_batch():
     assert results[1].category == "Transportation"
     assert results[2].vendor == "Amazon"
     
-    # Verify the LLM was called exactly 3 times
-    assert mock_client.chat.completions.create.call_count == 3
+    # Verify the LLM was called once via micro-batching instead of 3 individual calls
+    assert mock_client.chat.completions.create.call_count == 1
+
+
+def test_normalize_transactions_with_vendor_cache(tmp_path):
+    import sqlite3
+    from src.python.llm import BatchTransactionEntities
+
+    db_file = tmp_path / "test_cache.db"
+    with sqlite3.connect(str(db_file)) as conn:
+        conn.execute("""
+            CREATE TABLE vendor_cache (
+                raw_description TEXT PRIMARY KEY,
+                vendor TEXT NOT NULL,
+                category TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        # Pre-seed cache with one known vendor
+        conn.execute(
+            "INSERT INTO vendor_cache (raw_description, vendor, category) VALUES (?, ?, ?)",
+            ("SQ *LOCAL COFFEE SHOP", "Local Coffee Shop", "Dining")
+        )
+        conn.commit()
+
+    raw_strings = [
+        "SQ *LOCAL COFFEE SHOP",           # Cache HIT
+        "UBER *TRIP SAN FRANCISCO CA",     # Cache MISS
+        "AMZN MKTP US*8J24O AMZN.COM/BILL" # Cache MISS
+    ]
+
+    with patch("src.python.llm.client") as mock_client:
+        mock_client.chat.completions.create.return_value = BatchTransactionEntities(
+            items=[
+                TransactionEntity(vendor="Uber", category="Transportation"),
+                TransactionEntity(vendor="Amazon", category="Shopping")
+            ]
+        )
+
+        results = normalize_transactions(raw_strings, db_path=str(db_file))
+
+    # All 3 items should be resolved and maintain original order
+    assert len(results) == 3
+    assert results[0].vendor == "Local Coffee Shop"
+    assert results[0].category == "Dining"
+    assert results[1].vendor == "Uber"
+    assert results[1].category == "Transportation"
+    assert results[2].vendor == "Amazon"
+    assert results[2].category == "Shopping"
+
+    # Only 1 LLM call made for the 2 cache misses via micro-batching
+    assert mock_client.chat.completions.create.call_count == 1
+
+    # Verify newly normalized vendors were written into vendor_cache
+    with sqlite3.connect(str(db_file)) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT raw_description, vendor, category FROM vendor_cache ORDER BY vendor")
+        cached_rows = cursor.fetchall()
+        assert len(cached_rows) == 3
+        vendors = {row[1] for row in cached_rows}
+        assert vendors == {"Amazon", "Local Coffee Shop", "Uber"}
