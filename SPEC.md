@@ -195,6 +195,64 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
   * **Tab: "Vendors"**
     * Vertically stacks UI blocks for Feature 2.1 (Highest Spend) and Feature 2.2 (Lowest Spend).
 
+## 6.5 Vendor Canonicalization
+
+After ingestion completes, the user must be able to invoke a vendor canonicalization routine that reconciles typographically distinct but semantically identical vendor names stored in the `transactions` table, so that amounts attributed to them are coherently aggregated per vendor.
+
+### 6.5.1 Scope & Equivalence Rule
+The feature scans **all rows** in `transactions` where `vendor IS NOT NULL` and applies a deterministic, pure function `canonical_key(vendor) -> str` that normalizes a vendor name by:
+1. Converting to lowercase.
+2. Stripping all non-alphanumeric characters (spaces, hyphens, periods, asterisks, underscores, etc.).
+
+Two vendors are **semantically equivalent** if and only if `canonical_key` returns the same string for both.
+- Examples: `TMOBILE`, `T-Mobile`, `T-MOBILE.`, and `* T-MOBILE *` (a raw description's vendor) all collapse to key `tmobile`; `Quickpark`, `Quick_Park`, and `Quick Park.` all collapse to `quickpark`.
+
+Run-collapsing (treating `aa` and `a` as equal) was deliberately **omitted**: it provides no benefit for the stated examples and risks merging genuinely distinct vendors that merely differ by a doubled character. A 2-step key (lowercase + strip) is the sound, minimally-invasive invariant.
+
+For each equivalence class (one or more distinct vendor spellings sharing a key), the **canonical representative** is:
+- the spelling with the **highest row frequency**;
+- breaking ties by the **lexicographically smallest** original spelling.
+
+A class of size 1 (a spelling that is already its own representative) maps to itself and is excluded from the rename set.
+
+### 6.5.2 Consolidation: Rename, Not Row-Merge
+Consolidation is performed **by renaming `transactions.vendor` only**. No row is inserted or deleted, and no per-row `amount`, `transaction_date`, or `raw_description` is mutated.
+- Because each row retains its canonical signed amount (negative = expenditure, positive = deposit), consolidated spending per vendor is the algebraic sum of its rows: `SUM(amount) GROUP BY vendor`.
+- This makes the sign-dependent aggregation the user expects automatic and lossless: merged negative rows **sum into a larger net expenditure**, while merged positive rows **net against** it (a deposit "subtracts" from spend). No sign flip is performed at merge time; signs are only reconciled at aggregation time in the analytics layer (Features 2.1–2.4).
+- **Rationale (single source of truth):** row-merging would destroy auditability, break idempotency, and require re-deriving dates/categories. A lossless rename keeps the ledger append-only, reversible-in-principle, and idempotent.
+
+### 6.5.3 Module & Function Contract
+A new module `src/python/vendor_canonicalize.py` provides:
+
+```python
+def canonical_key(vendor: str) -> str
+```
+Pure, deterministic. Returns the normalized key per §6.5.1. No I/O, no side effects.
+
+```python
+def compute_canonical_mappings(db_path: str) -> dict[str, str]
+```
+Scans `transactions`, groups distinct `vendor` values by `canonical_key`, selects the canonical representative per group, and returns `{old_vendor: canonical_name}` for every spelling that is **not** already its own representative. Vendors that map to themselves are omitted. This function is a pure read; it does **not** mutate the database.
+
+```python
+def apply_canonicalization(db_path: str) -> dict[str, str]
+```
+Computes the mappings, then applies them in a single transaction: updates `transactions.vendor` for all affected rows and invalidates/reconciles `vendor_cache` (see §6.5.6). Returns the same `{old: canonical}` mapping as `compute_canonical_mappings` (empty when there is nothing to merge). Fail-fast: database/connection errors propagate as exceptions (the CLI translates these to a non-zero exit code).
+
+### 6.5.4 CLI Interface
+```bash
+uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db
+```
+The command calls `apply_canonicalization`, prints a human-readable summary (vendor count before/after and the list of `old -> canonical` renames), and returns exit code `0` on success and non-zero on database errors.
+
+### 6.5.5 Idempotency
+Running canonicalization multiple times is safe: once all spellings equal their class's representative, `compute_canonical_mappings`/`apply_canonicalization` returns an empty dict and writes nothing to the database.
+
+### 6.5.6 Vendor Cache Invalidation
+After renaming, any `vendor_cache` row whose `vendor` is a non-canonical spelling must be updated so `vendor_cache.vendor` becomes the canonical representative. This keeps the LLM cache consistent with the transactions table, so future normalizations resolve to the canonical name. `vendor_cache.category` is left unchanged (a spelling's category is independent of its spelling).
+
+---
+
 ## 7. Orchestrator File Watcher
 
 The Go orchestrator must provide a resilient file watching mechanism to automate the ingestion pipeline.

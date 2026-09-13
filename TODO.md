@@ -125,3 +125,16 @@ This phase focuses on building the "dumb pipe"—the Go orchestrator that watche
 - [x] **Test:** Update `test_llm.py` to verify `normalize_vendor`, `normalize_batch`, and `normalize_transactions` use the passed `model` parameter.
 - [x] **Implement:** Update `llm.py` functions to accept `model: str = "gemma4:e2b"` and forward it to `client.chat.completions.create`.
 - [x] **Implement:** Update `pipeline.py` to load `LLMConfig` from the specified config file and pass `model` into `normalize_transactions`.
+
+---
+
+## Phase 9: Vendor Canonicalization & Data Hygiene (TDD)
+
+### Task 23: Post-Ingestion Vendor Canonicalization (TDD)
+Consolidate typographically mismatched but semantically duplicate vendors (e.g. `TMOBILE`/`T-Mobile`, `Quickpark`/`Quick Park`) by lossless rename so `SUM(amount) GROUP BY vendor` nets the merged rows (see PRD *Vendor Canonicalization*, SPEC §6.5).
+- [x] **T1 - Test (Red):** Author `tests/python/test_vendor_canonicalize.py` covering `canonical_key` equivalence, frequency-wins + lexicographic tie-breaking, single-vendor left untouched, **amount netting after rename** (mixed sign rows sum to the expected net), `vendor_cache` invalidation, idempotency (2nd run empty), and CLI exit codes. Verify the suite fails because the module is absent.
+- [x] **T2 - Test+Impl `canonical_key` (Red->Green):** Add a failing test for `canonical_key` (lowercase + strip non-alphanumerics), then implement the pure function. *Decision: run-collapsing was dropped as it offered no benefit for the stated examples and risked false merges (KISS/YAGNI).*
+- [x] **T3 - Test+Impl `compute_canonical_mappings` / `apply_canonicalization` (Red->Green):** Add failing tests for grouping by key and rename selection + that amounts are consolidated by aggregation (not row-merge), then implement the read function and the transactional apply.
+- [x] **T4 - Test+Impl `vendor_cache` invalidation (Red->Green):** Add a failing test asserting non-canonical cache vendors are rewritten, then reconcile cache rows in `apply_canonicalization`.
+- [x] **T5 - Test+Impl `canonicalize` CLI (Red->Green):** Add failing CLI tests (exit 0 on valid/empty DB, non-zero on bad DB path), then add the module entrypoint.
+- [x] **T6 - Refactor & Quality Gate:** Eliminate duplication, enforce type hints, and run `pytest`, `ruff check .`, `mypy src` green before committing.

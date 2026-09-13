@@ -72,7 +72,18 @@ This document serves as the persistent memory bank for the SpendSight project. I
   * *Decision:* The source file is deleted ONLY on a successful (Exit Code 0) pipeline run.
   * *Reasoning:* Prevents data loss if the LLM inference fails or if a file is malformed.
 
+## 9. Phase 8: Vendor Canonicalization & Data Hygiene
+
+### Task 23: Post-Ingestion Vendor Canonicalization (TDD) — DONE
+* *Status:* Implemented in `src/python/vendor_canonicalize.py` with a `canonicalize` CLI; 15 tests in `tests/python/test_vendor_canonicalize.py` all green.
+* *Canonical key:* `lowercase` + strip non-alphanumerics (`[^a-z0-9]`). **Run-collapsing was dropped** — it added no value for the stated examples (`TMOBILE`/`T-Mobile`, `Quickpark`/`Quick Park`) and risked false merges (e.g. `coffee`→`cofe`). KISS/YAGNI.
+* *Consolidation strategy: **rename, not row-merge.*** Rows are never deleted/inserted and no `amount`, `transaction_date`, or `raw_description` is mutated. Consolidated net spend per vendor is therefore `SUM(amount) GROUP BY vendor`: negative expenditures sum into a larger net expense; positive deposits net (subtract) against it. This makes the operation idempotent and lossless.
+* *Representative:* per equivalence class (shared canonical key), the most frequent spelling wins; ties break to the lexicographically smallest.
+* *Cache reconciliation:* `vendor_cache.vendor` is rewritten to the canonical name for any non-canonical spelling. `vendor_cache` existence is checked once in `apply_canonicalization`, outside the rename loop; its absence is not an error.
+* *CLI:* `python -m src.python.vendor_canonicalize canonicalize --input spendsight.db` — exit 0 on success/empty DB, non-zero on a missing `transactions` table or a corrupt database.
+* *Lint debt (pre-existing, untouched):* `ruff check src/ tests/` reports ~45 items (unsorted imports, `typing.List`, blind `except Exception`) and `mypy src/` reports 1 pre-existing type error in `ingest.py`. All are in files this task did not modify; the two new files are individually ruff- and mypy-clean. Flagged rather than fixed to keep the change focused.
+
 ## 8. Extraction Pipeline Improvements
 * **Defensive Data Cleaning:**
-  * *Decision:* Filter out completely null or empty rows in the `polars` layer.
-  * *Reasoning:* Prevents "ghost" records with `None` values caused by trailing newlines or empty data blocks in bank CSV exports.
+    * *Decision:* Filter out completely null or empty rows in the `polars` layer.
+    * *Reasoning:* Prevents "ghost" records with `None` values caused by trailing newlines or empty data blocks in bank CSV exports.
