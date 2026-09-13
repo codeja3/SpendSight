@@ -1,6 +1,6 @@
 # Global LLM configuration for local inference
 llm:
-  model: "gemma4:e2b"
+  model: "gemma4:e4b"
 
 profiles:
   # Profile for checking account
