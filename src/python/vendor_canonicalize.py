@@ -1,54 +1,63 @@
 """Post-ingestion vendor canonicalization (SPEC.md 6.5).
 
-Bank statements from different sources do not guarantee a stable spelling for the
-same vendor, so semantically identical vendors such as "TMOBILE" and "T-Mobile"
-(or "Quickpark" and "Quick Park") can land as distinct vendors and fragment
-spending. This module reconciles them by a lossless rename: it computes a
-deterministic canonical key for each vendor, groups spellings that share a key,
-picks a single canonical representative per group, and renames every affected
-row's vendor. No row is inserted or deleted and no per-row amount, date, or
-raw_description is mutated, so consolidated spending per vendor is obtained by
-summing the signed amounts in the analytics layer (negative expenditures sum into
-a larger net expense; positive deposits net against it). The vendor_cache is
-reconciled so future normalizations resolve to the canonical name, and the
-operation is idempotent: once every spelling equals its representative, a further
-run makes no changes.
+Bank statements from different sources do not guarantee a stable spelling
+for the same vendor, so semantically identical vendors such as "TMOBILE"
+and "T-Mobile" (or "Quickpark" and "Quick Park") can land as distinct
+vendors and fragment spending. This module reconciles them by a lossless
+rename: it computes a deterministic canonical key for each vendor, groups
+spellings that share a key, picks the most frequent spelling as the
+canonical representative, and renames every affected row. No row is
+inserted or deleted and no per-row amount or date is mutated.
+
+Two extension points sit on top of the mechanical key for cases the key
+cannot infer on its own. SYNONYMS is a user-maintained {spelling: target}
+map of semantic folds. REVIEW_FLAGS is a {vendor: note} map of vendors
+that look like a duplicate but must not be auto-merged.
 """
 
 import re
 import sqlite3
+from pathlib import Path
+
+import yaml
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]")
 
+# Populated from vendor_overrides.yaml at CLI launch.
+SYNONYMS: dict[str, str] = {}
+REVIEW_FLAGS: dict[str, str] = {
+    "Thank You-Mobile": "T-Mobile ACH/payroll processor -- verify category.",
+}
+DEFAULT_CONFIG = "vendor_overrides.yaml"
+
 
 def canonical_key(vendor: str) -> str:
-    """Return the deterministic comparison key for a vendor spelling."""
+    """Return the comparison key for a vendor spelling (lowercase, stripped)."""
     return _NON_ALNUM.sub("", vendor.lower())
 
 
-def _representative(spellings: set[str], counts: dict[str, int]) -> str:
-    """Pick the canonical spelling for one equivalence class.
+def class_key(vendor: str) -> str:
+    """Grouping key honouring user-supplied SYNONYMS."""
+    if vendor in SYNONYMS:
+        return canonical_key(SYNONYMS[vendor])
+    return canonical_key(vendor)
 
-    Most frequent wins; ties break to the lexicographically smallest spelling.
-    """
+
+def _representative(spellings: set[str], counts: dict[str, int]) -> str:
+    """Most-frequent spelling wins; ties break lexicographically."""
     return min(spellings, key=lambda name: (-counts[name], name))
 
 
 def _group_by_key(conn: sqlite3.Connection) -> dict[str, set[str]]:
-    """Return {canonical_representative: set(all spellings in the class)}."""
+    """Return {representative: set(spellings)} using class_key for grouping."""
     cursor = conn.execute(
         "SELECT vendor, COUNT(*) AS n FROM transactions WHERE vendor IS NOT NULL GROUP BY vendor"
     )
     counts = {vendor: n for vendor, n in cursor.fetchall()}
-
     classes: dict[str, set[str]] = {}
     for vendor in counts:
-        classes.setdefault(canonical_key(vendor), set()).add(vendor)
-
-    representative_by_key = {
-        key: _representative(spellings, counts) for key, spellings in classes.items()
-    }
-
+        classes.setdefault(class_key(vendor), set()).add(vendor)
+    representative_by_key = {key: _representative(sp, counts) for key, sp in classes.items()}
     merged: dict[str, set[str]] = {}
     for key, spellings in classes.items():
         merged[representative_by_key[key]] = spellings
@@ -56,11 +65,7 @@ def _group_by_key(conn: sqlite3.Connection) -> dict[str, set[str]]:
 
 
 def mappings_for(conn: sqlite3.Connection) -> dict[str, str]:
-    """Compute renames {old: canonical} for every non-self representative.
-
-    A spelling that is already its own representative is excluded, so a database
-    in canonical form yields an empty mapping -- the basis for idempotency.
-    """
+    """Return {old: canonical} renames; a self-representative is excluded."""
     mappings: dict[str, str] = {}
     for representative, spellings in _group_by_key(conn).items():
         for spelling in spellings:
@@ -70,35 +75,33 @@ def mappings_for(conn: sqlite3.Connection) -> dict[str, str]:
 
 
 def compute_canonical_mappings(db_path: str) -> dict[str, str]:
-    """Return {old_vendor: canonical_name} for the database at db_path.
-
-    Pure read; no mutation. Database errors propagate.
-    """
+    """Return {old_vendor: canonical_name} for the database (pure read)."""
     with sqlite3.connect(db_path) as conn:
         return mappings_for(conn)
 
 
-def apply_canonicalization(db_path: str) -> dict[str, str]:
-    """Merge typographically duplicate vendors by rename and return the mapping.
+def get_review_flags(conn: sqlite3.Connection) -> dict[str, str]:
+    """Return {vendor: note} for REVIEW_FLAGS still present in transactions."""
+    present = {row[0] for row in conn.execute("SELECT DISTINCT vendor FROM transactions")}
+    return {vendor: note for vendor, note in REVIEW_FLAGS.items() if vendor in present}
 
-    Within one transaction this renames transactions.vendor for every affected
-    row and rewrites any vendor_cache row whose vendor is a non-canonical
-    spelling so the cache stays consistent. Returns {old: canonical}; empty
-    when there is nothing to merge. Database or connection errors propagate
-    to the caller (the CLI maps these to a non-zero exit code).
+
+def apply_canonicalization(db_path: str) -> dict[str, str]:
+    """Merge duplicate vendors by rename and reconcile vendor_cache.
+
+    Within one transaction this renames transactions.vendor for every
+    affected row and rewrites any vendor_cache row whose vendor is
+    non-canonical. Returns {old: canonical}; empty when nothing to merge.
     """
     with sqlite3.connect(db_path) as conn:
         mappings = mappings_for(conn)
         if not mappings:
             return {}
-
-        # Detect vendor_cache once, outside the rename loop.
         has_cache = bool(
             conn.execute(
                 "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'vendor_cache' LIMIT 1"
             ).fetchone()
         )
-
         for old, canonical in mappings.items():
             conn.execute(
                 "UPDATE transactions SET vendor = ? WHERE vendor = ?",
@@ -113,47 +116,106 @@ def apply_canonicalization(db_path: str) -> dict[str, str]:
         return mappings
 
 
-def _print_summary(before: int, after: int, mappings: dict[str, str]) -> None:
+def load_override_config(
+    config_path: str | None,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Load (SYNONYMS, REVIEW_FLAGS) from a YAML file.
+
+    Schema (both sections optional):
+        synonyms:
+            "Landsend Inc.": "Lands' End"
+        review_flags:
+            "Thank You-Mobile": "ACH processor -- verify category."
+
+    A missing file or config_path=None yields ({}, {}).
+    """
+    if config_path is None:
+        return {}, {}
+
+    p = Path(config_path)
+    if not p.is_file():
+        raise FileNotFoundError(f"Vendor override config not found: {config_path}")
+    with open(p, "r", encoding="utf-8") as f:
+        try:
+            data = yaml.safe_load(f) or {}
+        except yaml.YAMLError as e:
+            raise ValueError(f"Failed to parse vendor override YAML: {e}")
+    return dict(data.get("synonyms") or {}), dict(data.get("review_flags") or {})
+
+
+def apply_override_config(config_path: str | None) -> None:
+    """Populate module-level SYNONYMS and REVIEW_FLAGS from a YAML config file."""
+    synonyms, review_flags = load_override_config(config_path)
+    SYNONYMS.clear()
+    SYNONYMS.update(synonyms)
+    REVIEW_FLAGS.clear()
+    REVIEW_FLAGS.update(review_flags)
+
+
+def _print_summary(
+    before: int,
+    after: int,
+    mappings: dict[str, str],
+    conn: sqlite3.Connection,
+) -> None:
     lines = [
         "Vendor canonicalization:",
         f"  vendors before: {before}",
-        f"  vendors after:   {after}",
-        f"  renames:         {len(mappings)}",
+        f"  vendors after:      {after}",
+        f"  renames:            {len(mappings)}",
     ]
     if mappings:
         lines.append("  name changes:")
         for old, canonical in sorted(mappings.items(), key=lambda kv: kv[1]):
-            lines.append(f"      {old!r} -> {canonical!r}")
+            lines.append(f"        {old!r:28} -> {canonical!r}")
     else:
         lines.append("  no vendors needed canonicalization")
+    flags = get_review_flags(conn)
+    if flags:
+        lines.append("")
+        lines.append(f"    {len(flags)} vendor(s) flagged for manual review (NOT merged):")
+        for vendor, note in sorted(flags.items()):
+            lines.append(f"        {vendor!r:28} -- {note}")
     print("\n".join(lines))
 
 
 def main() -> None:
     import argparse
     import sys
+    from pathlib import Path
 
     parser = argparse.ArgumentParser(
         description="Consolidate typographically duplicate vendors in the ledger."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    canonical = sub.add_parser("canonicalize", help="Merge duplicate vendors and print a summary.")
-    canonical.add_argument("--input", required=True, help="Path to the spendsight SQLite database.")
+    cg = sub.add_parser("canonicalize", help="Merge duplicate vendors and print a summary.")
+    cg.add_argument("--input", required=True, help="Path to the spendsight SQLite database.")
+    cg.add_argument(
+        "--config",
+        default=DEFAULT_CONFIG,
+        help="YAML file with synonym/review_flag overrides. Skipped when absent.",
+    )
     args = parser.parse_args()
 
     if args.command == "canonicalize":
+        if Path(args.config).is_file():
+            apply_override_config(args.config)
+        else:
+            print(f"Note: override config not found: {args.config} (using no overrides)")
         try:
             mappings = apply_canonicalization(args.input)
-        except sqlite3.Error as err:
+        except (sqlite3.Error, FileNotFoundError, ValueError) as err:
             print(f"Canonicalization error: {err}", file=sys.stderr)
             sys.exit(1)
-
-        with sqlite3.connect(args.input) as conn:
-            before = conn.execute(
-                "SELECT COUNT(DISTINCT vendor) FROM transactions WHERE vendor IS NOT NULL"
-            ).fetchone()[0]
-            after = before - len(mappings)
-        _print_summary(before, after, mappings)
+        conn = sqlite3.connect(args.input)
+        # after counts distinct vendors now in the DB; before adds back
+        # the removed "old" keys. Correct even when nothing was merged.
+        after = conn.execute(
+            "SELECT COUNT(DISTINCT vendor) FROM transactions WHERE vendor IS NOT NULL",
+        ).fetchone()[0]
+        before = after + len(mappings)
+        _print_summary(before, after, mappings, conn)
+        conn.close()
         sys.exit(0)
 
 

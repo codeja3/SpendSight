@@ -16,6 +16,7 @@ Thumbs.db
 *.db-journal
 *.db-wal
 *.db-shm
+*.bak
 spendsight.db
 
 # Go Binaries & Build Outputs

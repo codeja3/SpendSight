@@ -251,6 +251,30 @@ Running canonicalization multiple times is safe: once all spellings equal their 
 ### 6.5.6 Vendor Cache Invalidation
 After renaming, any `vendor_cache` row whose `vendor` is a non-canonical spelling must be updated so `vendor_cache.vendor` becomes the canonical representative. This keeps the LLM cache consistent with the transactions table, so future normalizations resolve to the canonical name. `vendor_cache.category` is left unchanged (a spelling's category is independent of its spelling).
 
+### 6.5.7 External Override Configuration (`SYNONYMS` / `REVIEW_FLAGS`)
+The mechanics of §6.5.1 cover typographic differences only. Two classes of duplicates that the mechanical key cannot infer are handled via a user-maintained YAML file `vendor_overrides.yaml` loaded through `load_override_config` / `apply_override_config`, optional via the CLI `--config` flag (default `vendor_overrides.yaml`; an absent file is a no-op, a present-but-malformed file fails fast).
+
+**Schema:**
+```yaml
+synonyms:
+       # Each key is a current vendor spelling; its value is the
+       # target name to fold this spelling into. The target's
+       # equivalence class then selects the canonical representative
+       # by the usual most-frequent rule (§6.5.1).
+       "Landsend Inc.": "Lands' End"
+
+review_flags:
+       # Vendors that *look* like a duplicate but must NOT be auto-merged.
+       # Surfaced in the CLI summary for manual triage; never merged.
+       "Thank You-Mobile": "Possible T-Mobile ACH processor -- verify."
+```
+
+**Behavior:**
+* `SYNONYMS[spelling] = target`: `class_key(spelling)` returns `canonical_key(target)`, so the spelling joins the target's equivalence class and both spellings participate in the same most-frequent/lex representative selection. This preserves idempotency: once a spelling is renamed to the class representative, it no longer carries its original key.
+* `REVIEW_FLAGS[vendor] = note`: the vendor is explicitly excluded from any automatic merge. `get_review_flags(conn)` returns `{vendor: note}` for every flagged vendor still present in `transactions` (i.e., not already renamed), enabling the CLI to print a "manual review" section without merging them.
+
+**Rationale:** `Landsend Inc.` and `Lands' End` differ by an alphanumeric token (`inc`); no mechanical rule can distinguish "inc as decoration" from "inc as part of the name" without a human decision. `Thank You-Mobile` shares no key with `T-Mobile` by construction (it is T-Mobile's ACH/payment processor, not a typo), and even if it did, merging it would silently combine income and expense. Explicit user judgment is the only sound handling.
+
 ---
 
 ## 7. Orchestrator File Watcher

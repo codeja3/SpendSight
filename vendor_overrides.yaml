@@ -1,0 +1,16 @@
+# Vendor overrides for canonicalization
+#
+# synonyms: spelling maps that canonical_key cannot infer mechanically.
+#   Each entry says "this spelling means that target vendor".
+#   The target's equivalence class selects the canonical representative.
+#
+# review_flags: vendors that *look* like a duplicate but must NOT be merged
+#   automatically. They appear in the CLI summary for manual review.
+
+synonyms:
+      "Landsend Inc.": "Lands' End"
+      "LANDSEND INC.": "Lands' End"
+
+review_flags:
+      "Thank You-Mobile": "T-Mobile ACH/payroll processor -- verify category before merging."
+      "Windmill Island Garden": "Possible Landscaping/Outdoor; verify before classifying."

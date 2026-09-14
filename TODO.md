@@ -138,3 +138,11 @@ Consolidate typographically mismatched but semantically duplicate vendors (e.g. 
 - [x] **T4 - Test+Impl `vendor_cache` invalidation (Red->Green):** Add a failing test asserting non-canonical cache vendors are rewritten, then reconcile cache rows in `apply_canonicalization`.
 - [x] **T5 - Test+Impl `canonicalize` CLI (Red->Green):** Add failing CLI tests (exit 0 on valid/empty DB, non-zero on bad DB path), then add the module entrypoint.
 - [x] **T6 - Refactor & Quality Gate:** Eliminate duplication, enforce type hints, and run `pytest`, `ruff check .`, `mypy src` green before committing.
+
+### Task 24: External Vendor Override Config (TDD)
+Add a user-maintained `vendor_overrides.yaml` so semantic merges the mechanical key cannot infer can be declared without editing source.
+- [x] **T1 - Test (Red):** Author `tests/python/test_vendor_synonyms.py` covering: default no-fold of `Landsend Inc.` vs `Lands' End`; fold applied when configured (class nets correctly, idempotent); `REVIEW_FLAGS` vendors never merged and surfaceable via `get_review_flags`.
+- [x] **T2 - Test+Impl `load_override_config` / `apply_override_config` (Red->Green):** YAML loader with `synonyms` / `review_flags` sections, fail-fast on malformed config, no-op on absent file; module-level dict population.
+- [x] **T3 - Test+Impl `--config` CLI flag (Red->Green):** `canonicalize --config <path>`; absent file prints a note and skips, present file is applied.
+- [x] **T4 - Fix before/after count reporting (Red->Green):** Count distinct vendors on a separate connection before mutation so the reported counts reflect pre/post-merge state (not a post-mutation read).
+- [x] **T5 - Refactor & commit:** Run full suite / ruff / mypy green; commit.

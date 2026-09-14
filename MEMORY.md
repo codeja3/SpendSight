@@ -75,13 +75,19 @@ This document serves as the persistent memory bank for the SpendSight project. I
 ## 9. Phase 8: Vendor Canonicalization & Data Hygiene
 
 ### Task 23: Post-Ingestion Vendor Canonicalization (TDD) — DONE
-* *Status:* Implemented in `src/python/vendor_canonicalize.py` with a `canonicalize` CLI; 15 tests in `tests/python/test_vendor_canonicalize.py` all green.
-* *Canonical key:* `lowercase` + strip non-alphanumerics (`[^a-z0-9]`). **Run-collapsing was dropped** — it added no value for the stated examples (`TMOBILE`/`T-Mobile`, `Quickpark`/`Quick Park`) and risked false merges (e.g. `coffee`→`cofe`). KISS/YAGNI.
-* *Consolidation strategy: **rename, not row-merge.*** Rows are never deleted/inserted and no `amount`, `transaction_date`, or `raw_description` is mutated. Consolidated net spend per vendor is therefore `SUM(amount) GROUP BY vendor`: negative expenditures sum into a larger net expense; positive deposits net (subtract) against it. This makes the operation idempotent and lossless.
-* *Representative:* per equivalence class (shared canonical key), the most frequent spelling wins; ties break to the lexicographically smallest.
-* *Cache reconciliation:* `vendor_cache.vendor` is rewritten to the canonical name for any non-canonical spelling. `vendor_cache` existence is checked once in `apply_canonicalization`, outside the rename loop; its absence is not an error.
-* *CLI:* `python -m src.python.vendor_canonicalize canonicalize --input spendsight.db` — exit 0 on success/empty DB, non-zero on a missing `transactions` table or a corrupt database.
-* *Lint debt (pre-existing, untouched):* `ruff check src/ tests/` reports ~45 items (unsorted imports, `typing.List`, blind `except Exception`) and `mypy src/` reports 1 pre-existing type error in `ingest.py`. All are in files this task did not modify; the two new files are individually ruff- and mypy-clean. Flagged rather than fixed to keep the change focused.
+* *Status:* Implemented in `src/python/vendor_canonicalize.py` with a `canonicalize` CLI; tests in `tests/python/test_vendor_canonicalize.py` all green.
+* *Canonical key:* `lowercase` + strip non-alphanumerics (`[^a-z0-9]`). **Run-collapsing was dropped** — it added no value for the stated examples (`TMOBILE`/`T-Mobile`, `Quickpark`/`Quick Park`) and risked false merges.
+* *Consolidation: rename, not row-merge.* Rows are never deleted/inserted and no `amount`/`date`/`raw_description` is mutated. Consolidated net spend is `SUM(amount) GROUP BY vendor`: expenditures sum into a larger net; deposits net (subtract) against it. Idempotent and lossless.
+* *Representative:* per equivalence class, most-frequent spelling wins; ties break lexicographically.
+* *Cache reconciliation:* `vendor_cache.vendor` rewritten to the canonical name for any non-canonical spelling; cache-existence checked once in `apply_canonicalization`.
+* *Real-DB run:* 148->141 distinct vendors via 7 correct merges (all case variants of the same vendor); no false-positive merges observed.
+* *Lint debt (pre-existing, untouched):* `ruff check src/ tests/` reports several items in `ingest.py`, `llm.py`, `pipeline.py`, `app.py`, `config.py`, `dal.py`, and `test_cli.py`, `test_dal.py`, `test_llm.py`. Flagged rather than fixed.
+
+### Task 24: External Vendor Override Config (TDD) — DONE
+* *Status:* `SYNONYMS` and `REVIEW_FLAGS` as module-level dicts, populated from `vendor_overrides.yaml` via `load_override_config` (fail-fast on malformed YAML, no-op on absent file) and `apply_override_config`. Tests in `tests/python/test_vendor_synonyms.py` all green.
+* *Design decision:* `Landsend Inc.` vs `Lands' End` differ by an alphanumeric token ("inc") — no mechanical rule distinguishes "inc as decoration" from "inc as part of the name." A user-supplied `SYNONYMS` entry is the only sound way to fold this pair without risking false merges. `REVIEW_FLAGS` ("Thank You-Mobile": "possible T-Mobile ACH processor") prevents auto-merging a vendor that superficially resembles a duplicate but is income in a different category.
+* *CLI:* `canonicalize --input <db> --config vendor_overrides.yaml`; absent config prints a note and skips.
+* *Count bug fixed:* `before`/`after` in `main()` now query a separate connection before calling `apply_canonicalization`, so the reported counts reflect pre/post-merge state even when zero renames occur.
 
 ## 8. Extraction Pipeline Improvements
 * **Defensive Data Cleaning:**
