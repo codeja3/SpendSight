@@ -144,5 +144,5 @@ Add a user-maintained `vendor_overrides.yaml` so semantic merges the mechanical 
 - [x] **T1 - Test (Red):** Author `tests/python/test_vendor_synonyms.py` covering: default no-fold of `Landsend Inc.` vs `Lands' End`; fold applied when configured (class nets correctly, idempotent); `REVIEW_FLAGS` vendors never merged and surfaceable via `get_review_flags`.
 - [x] **T2 - Test+Impl `load_override_config` / `apply_override_config` (Red->Green):** YAML loader with `synonyms` / `review_flags` sections, fail-fast on malformed config, no-op on absent file; module-level dict population.
 - [x] **T3 - Test+Impl `--config` CLI flag (Red->Green):** `canonicalize --config <path>`; absent file prints a note and skips, present file is applied.
-- [x] **T4 - Fix before/after count reporting (Red->Green):** Count distinct vendors on a separate connection before mutation so the reported counts reflect pre/post-merge state (not a post-mutation read).
+- [x] **T4 - Fix before/after count reporting:** Count distinct vendors separately so the reported counts reflect pre/post-merge state (not a post-mutation read).
 - [x] **T5 - Refactor & commit:** Run full suite / ruff / mypy green; commit.
