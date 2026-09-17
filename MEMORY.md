@@ -114,5 +114,13 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Status:* Updated `MANUAL.md` and `README.md` to document the All Vendors directory tab, its 5 columns (Vendor, Txns, Category, Net Spend, Last Date), and live search input.
 * *Verification:* Full test suite (`pytest`, `go test ./...`) and linters green.
 
+### Task 29: Vendor Directory Column Ordering & Sign Formatting (TDD) — DONE
+* *Status:* Reordered columns in `_load_vendor_directory` in `src/python/app.py` to `("Vendor", "Total Spend", "Txns", "Category", "Last Date")`. Formatted currency balances as `-$X,XXX.XX` for negative expenditures and `$X,XXX.XX` for positive net amounts. Tests in `tests/python/test_app.py` all green.
+* *Design decision:* The analytics pane has `width: 1fr` (1/3 of the screen width). Placing `Total Spend` immediately after `Vendor` guarantees total dollars spent are in plain sight without horizontal cutoff.
+
+### Task 30: Canonicalize Amazon Brand Variants (TDD) — DONE
+* *Status:* Configured `Amazon.com`, `Amazon Prime`, and `Amazon Marketplace` under `synonyms:` in `vendor_overrides.yaml`. Added unit test in `tests/python/test_vendor_synonyms.py` verifying that all variants fold into `Amazon` and net algebraic spend correctly.
+* *Database Reconciliation:* Reconciled local `spendsight.db` via `uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml`. Consolidated 4 Amazon variants (72 total transactions, net -$3,428.82) into a single canonical `Amazon` entity. Total distinct vendors reduced from 141 to 138.
+
 
 

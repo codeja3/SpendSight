@@ -137,6 +137,41 @@ def test_synonym_idempotent_after_apply():
         cleanup(path)
 
 
+def test_amazon_synonym_fold_applied_and_nets_spend():
+    # Verify Amazon variants (Amazon.com, Amazon Prime, Amazon Marketplace) fold into Amazon
+    path = make_db(
+        [
+            ("2024-01-10", -2986.99, "Amazon order 1", "Amazon", "Shopping"),
+            ("2024-02-15", -63.76, "Amazon.com prime item", "Amazon.com", "Shopping"),
+            ("2024-03-01", -147.34, "Amazon Prime annual", "Amazon Prime", "Subscriptions"),
+            ("2024-03-05", -230.73, "Amazon Marketplace seller", "Amazon Marketplace", "Shopping"),
+        ]
+    )
+    saved = dict(vc.SYNONYMS)
+    vc.SYNONYMS.update({
+        "Amazon.com": "Amazon",
+        "Amazon Prime": "Amazon",
+        "Amazon Marketplace": "Amazon",
+    })
+    try:
+        mappings = apply_canonicalization(path)
+        assert len(mappings) == 3
+        remaining = distinct_vendors(path)
+        assert remaining == {"Amazon"}
+
+        with sqlite3.connect(path) as conn:
+            net = conn.execute("SELECT ROUND(SUM(amount), 2) FROM transactions WHERE vendor='Amazon'").fetchone()[0]
+            # -2986.99 - 63.76 - 147.34 - 230.73 = -3428.82
+            assert abs(net - (-3428.82)) < 0.01
+
+        # Idempotency check
+        assert apply_canonicalization(path) == {}
+    finally:
+        vc.SYNONYMS.clear()
+        vc.SYNONYMS.update(saved)
+        cleanup(path)
+
+
 # -- review flags --
 
 

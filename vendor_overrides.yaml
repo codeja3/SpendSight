@@ -10,6 +10,12 @@
 synonyms:
       "Landsend Inc.": "Lands' End"
       "LANDSEND INC.": "Lands' End"
+      "Amazon.com": "Amazon"
+      "Amazon Prime": "Amazon"
+      "Amazon Marketplace": "Amazon"
+      "AMAZON.COM": "Amazon"
+      "AMAZON PRIME": "Amazon"
+      "AMAZON MARKETPLACE": "Amazon"
 
 review_flags:
       "Thank You-Mobile": "T-Mobile ACH/payroll processor -- verify category before merging."

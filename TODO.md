@@ -184,6 +184,6 @@ Reorder "All Vendors" data table columns to `Vendor`, `Total Spend`, `Txns`, `Ca
 
 ### Task 30: Canonicalize Amazon Brand Variants (TDD)
 Consolidate Amazon variants (`Amazon.com`, `Amazon Prime`, `Amazon Marketplace`) via `vendor_overrides.yaml` synonyms and verify via unit tests and reconciliation of `spendsight.db`.
-- [ ] **T1 - Test (Red):** Add unit test in `tests/python/test_vendor_synonyms.py` verifying that configuring Amazon variants folds them into `Amazon`, nets amounts correctly, and remains idempotent.
-- [ ] **T2 - Impl (Red->Green):** Add Amazon synonyms to `vendor_overrides.yaml` and run `vendor_canonicalize` against `spendsight.db`.
-- [ ] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_vendor_synonyms.py` passes, linters pass, and `spendsight.db` reflects consolidated `Amazon` vendor.
+- [x] **T1 - Test (Red):** Add unit test in `tests/python/test_vendor_synonyms.py` verifying that configuring Amazon variants folds them into `Amazon`, nets amounts correctly, and remains idempotent.
+- [x] **T2 - Impl (Red->Green):** Add Amazon synonyms to `vendor_overrides.yaml` and run `vendor_canonicalize` against `spendsight.db`.
+- [x] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_vendor_synonyms.py` passes, linters pass, and `spendsight.db` reflects consolidated `Amazon` vendor.
