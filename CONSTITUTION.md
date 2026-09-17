@@ -43,3 +43,11 @@ This document defines the immutable rules of engagement for developing SpendSigh
 * **Python Dependency Management:** `uv` is the mandated package manager for the Python extraction layer. Standard `requirements.txt` or `pyproject.toml` will be used, and execution will occur within a `uv`-managed virtual environment.
 * **Go Dependency Management:** The standard `go mod` toolchain is mandatory. No third-party package managers will be used for Go.
 * **System Services:** The local inference server (Ollama) must run as a native system service on the host OS to ensure direct GPU/Metal access without virtualization overhead.
+
+## 6. Agentic development
+You have access to the Headroom MCP server (`mcp__headroom__*`). 
+
+To preserve context window and quota, follow these execution rules:
+1. Context Compression: Before ingesting large tool outputs (such as `git diff`, test suite logs, directory trees, or source files exceeding 100 lines), route the text through `mcp__headroom__headroom_compress`.
+2. Detail Retrieval (CCR): If you encounter compressed tokens or content hashes and need the underlying code or error detail, call `mcp__headroom__headroom_retrieve` to inspect the full snippet on demand.
+3. Reporting: Whenever you perform major inspections, briefly report the token reduction or run `mcp__headroom__headroom_stats` upon request.
