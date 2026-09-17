@@ -45,4 +45,5 @@ htmlcov/
 .agy/
 .posit/
 smoke_canon/
-
+.mcp.json
+.antigravityignore
