@@ -167,9 +167,9 @@ Add `VendorDirectoryRow` and `get_vendor_directory` to `SpendSightDAL` supportin
 
 ### Task 27: "All Vendors" Tab & Real-Time Search in Textual TUI (TDD)
 Wire a dedicated "All Vendors" tab in `SpendSightApp` featuring an interactive search input and a data table rendering all vendor records with real-time filtering (SPEC §6.3 Feature 2.5).
-- [ ] **T1 - Test (Red):** Add test in `tests/python/test_app.py` verifying the "All Vendors" tab mounts with `#vendor-search-input` and `#vendor-directory-table`, populates rows on load, and dynamically updates rows when text is typed into the search bar.
-- [ ] **T2 - Impl (Red->Green):** Add TabPane "All Vendors", composed with `Input(id="vendor-search-input")` and `DataTable(id="vendor-directory-table")`. Implement `_load_vendor_directory()` on mount and `on_input_changed()` handler for real-time filtering.
-- [ ] **T3 - Refactor & Quality Gate:** Run full test suite (`pytest`, `go test ./...`, `ruff check .`, `mypy src`).
+- [x] **T1 - Test (Red):** Add test in `tests/python/test_app.py` verifying the "All Vendors" tab mounts with `#vendor-search-input` and `#vendor-directory-table`, populates rows on load, and dynamically updates rows when text is typed into the search bar.
+- [x] **T2 - Impl (Red->Green):** Add TabPane "All Vendors", composed with `Input(id="vendor-search-input")` and `DataTable(id="vendor-directory-table")`. Implement `_load_vendor_directory()` on mount and `on_input_changed()` handler for real-time filtering.
+- [x] **T3 - Refactor & Quality Gate:** Run full test suite (`pytest`, `go test ./...`, `ruff check .`, `mypy src`).
 
 ### Task 28: Documentation & Manual Verification
 Update user-facing manual and documentation with instructions of the All Vendors directory.

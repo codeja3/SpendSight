@@ -106,3 +106,8 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Status:* Implemented `VendorDirectoryRow` and `get_vendor_directory(search: str | None = None)` in `src/python/dal.py`; unit tests in `tests/python/test_dal.py` all green.
 * *Query design:* Correlated subquery resolves primary category by maximum frequency with alphabetical tie-breaking; aggregates total transaction count, algebraic net spend, and latest transaction date. Sorted alphabetically (`COLLATE NOCASE ASC`). Case-insensitive substring filter enabled via `AND LOWER(t.vendor) LIKE ?`.
 
+### Task 27: "All Vendors" Tab & Real-Time Search in Textual TUI (TDD) — DONE
+* *Status:* Added "All Vendors" `TabPane` to `SpendSightApp` in `src/python/app.py` with `Input(id="vendor-search-input")` and `DataTable(id="vendor-directory-table")`. Tests in `tests/python/test_app.py` verifying mount, table columns/rows, and dynamic live search filtering are green.
+* *Interaction:* Real-time filtering handled via `on_input_changed`, querying `dal.get_vendor_directory(search=query)` and rebuilding table rows cleanly without layout remounting.
+
+

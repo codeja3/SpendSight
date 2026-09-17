@@ -1,8 +1,10 @@
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, VerticalScroll
-from textual.widgets import Header, Footer, DataTable, TabbedContent, TabPane, Select, Label
+from textual.widgets import DataTable, Footer, Header, Input, Label, Select, TabbedContent, TabPane
 from textual_plotext import PlotextPlot
+
 from src.python.dal import SpendSightDAL
+
 
 class SpendSightApp(App):
     """The main Textual dashboard for SpendSight."""
@@ -26,6 +28,12 @@ class SpendSightApp(App):
     #category-drill-down {
         height: 1fr;
     }
+    #vendor-search-input {
+        margin: 1 0;
+    }
+    #vendor-directory-table {
+        height: 1fr;
+    }
     """
 
     def __init__(self, dal: SpendSightDAL, **kwargs):
@@ -43,22 +51,25 @@ class SpendSightApp(App):
             # Right Pane: Analytics
             with TabbedContent(id="analytics-pane"):
                 
-                with TabPane("Categories", id="tab-categories"):
-                    with VerticalScroll():
-                        yield Label("Top Expenses by Category", classes="widget-title")
-                        yield PlotextPlot(id="category-chart")
-                        
-                        yield Label("Vendor Drill-down by Category", classes="widget-title")
-                        yield Select([], id="category-select", prompt="Select a Category...")
-                        yield DataTable(id="category-drill-down")
+                with TabPane("Categories", id="tab-categories"), VerticalScroll():
+                    yield Label("Top Expenses by Category", classes="widget-title")
+                    yield PlotextPlot(id="category-chart")
                     
-                with TabPane("Vendors", id="tab-vendors"):
-                    with VerticalScroll():
-                        yield Label("Top 5 Highest Spends", classes="widget-title")
-                        yield DataTable(id="top-vendors-table")
-                        
-                        yield Label("Bottom 5 Lowest Spends", classes="widget-title")
-                        yield DataTable(id="bottom-vendors-table")
+                    yield Label("Vendor Drill-down by Category", classes="widget-title")
+                    yield Select([], id="category-select", prompt="Select a Category...")
+                    yield DataTable(id="category-drill-down")
+                    
+                with TabPane("Vendors", id="tab-vendors"), VerticalScroll():
+                    yield Label("Top 5 Highest Spends", classes="widget-title")
+                    yield DataTable(id="top-vendors-table")
+                    
+                    yield Label("Bottom 5 Lowest Spends", classes="widget-title")
+                    yield DataTable(id="bottom-vendors-table")
+
+                with TabPane("All Vendors", id="tab-all-vendors"), VerticalScroll():
+                    yield Label("Vendor Directory", classes="widget-title")
+                    yield Input(placeholder="Search vendors...", id="vendor-search-input")
+                    yield DataTable(id="vendor-directory-table")
                     
         yield Footer()
 
@@ -67,6 +78,7 @@ class SpendSightApp(App):
         self._load_ledger()
         self._load_vendors()
         self._load_categories()
+        self._load_vendor_directory()
 
     def _load_ledger(self) -> None:
         table = self.query_one("#ledger-pane", DataTable)
@@ -86,6 +98,21 @@ class SpendSightApp(App):
         bottom_table.add_columns("Vendor", "Total Spend")
         for row in self.dal.get_bottom_vendors(limit_n=5):
             bottom_table.add_row(row.name, f"${row.total_spend:,.2f}")
+
+    def _load_vendor_directory(self, search: str | None = None) -> None:
+        # Feature 2.5: Populate the All Vendors directory table
+        table = self.query_one("#vendor-directory-table", DataTable)
+        if not table.columns:
+            table.add_columns("Vendor", "Txns", "Category", "Net Spend", "Last Date")
+        table.clear()
+        for row in self.dal.get_vendor_directory(search=search):
+            table.add_row(
+                row.name,
+                str(row.transaction_count),
+                row.primary_category,
+                f"${row.total_spend:,.2f}",
+                row.last_active_date,
+            )
 
     def _load_categories(self) -> None:
         categories = self.dal.get_top_categories(limit_n=10)
@@ -118,6 +145,13 @@ class SpendSightApp(App):
             vendors = self.dal.get_top_vendors_by_category(str(event.value), limit_n=5)
             for v in vendors:
                 drill_table.add_row(v.name, f"${v.total_spend:,.2f}")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle real-time vendor directory search (Feature 2.5)."""
+        if event.input.id == "vendor-search-input":
+            query = event.value.strip() or None
+            self._load_vendor_directory(search=query)
+
 
 if __name__ == "__main__":
     import os
