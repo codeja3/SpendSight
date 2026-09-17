@@ -47,3 +47,6 @@ htmlcov/
 smoke_canon/
 .mcp.json
 .antigravityignore
+.antigravity
+test_venv/
+
