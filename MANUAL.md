@@ -117,7 +117,7 @@ To view your financial analytics, run the dashboard command:
 
 This launches the native `Textual` UI.
 
-- Left Pane: View your complete, normalized ledger.
+- Left Pane: View your complete, normalized ledger. Use the `[Expenses Only]` / `[Show All]` button above the table to quickly filter out income and view negative expenditures only.
 
 - Right Pane (Categories): View bar charts of your spending and use the dropdown to drill down into specific vendors within a category.
 

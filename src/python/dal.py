@@ -33,16 +33,19 @@ class SpendSightDAL:
             cursor.execute(query, params)
             return cursor.fetchall()
 
-    def get_ledger(self, limit: int = 50, offset: int = 0) -> list[LedgerRow]:
+    def get_ledger(self, limit: int = 50, offset: int = 0, expenses_only: bool = False) -> list[LedgerRow]:
         """Feature 1: Retrieves chronological transactions."""
-        query = """
+        where_clause = "WHERE amount < 0" if expenses_only else ""
+        query = f"""
             SELECT transaction_date AS date, vendor, category, amount 
             FROM transactions 
+            {where_clause}
             ORDER BY transaction_date DESC 
             LIMIT ? OFFSET ?
         """
         rows = self._execute_query(query, (limit, offset))
         return [LedgerRow(**dict(row)) for row in rows]
+
 
     def get_top_vendors(self, limit_n: int = 5) -> list[AggregateRow]:
         """Feature 2.1: Retrieves the vendors with the most negative sum."""

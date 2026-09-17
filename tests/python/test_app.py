@@ -109,3 +109,47 @@ async def test_vendor_directory_search_filters_rows():
         filtered_row = vendor_table.get_row_at(0)
         assert filtered_row[0] == "Coffee Shop"
         assert filtered_row[1] == "-$60.00"
+
+
+@pytest.mark.asyncio
+async def test_ledger_income_toggle():
+    mock_dal = Mock(spec=SpendSightDAL)
+    all_txns = [
+        LedgerRow(date="2026-04-14", vendor="Employer", category="Income", amount=5000.0),
+        LedgerRow(date="2026-04-13", vendor="Landlord", category="Housing", amount=-2000.0),
+    ]
+    expenses_only_txns = [
+        LedgerRow(date="2026-04-13", vendor="Landlord", category="Housing", amount=-2000.0),
+    ]
+
+    def fake_get_ledger(limit=50, offset=0, expenses_only=False):
+        return expenses_only_txns if expenses_only else all_txns
+
+    mock_dal.get_ledger.side_effect = fake_get_ledger
+    mock_dal.get_top_vendors.return_value = []
+    mock_dal.get_bottom_vendors.return_value = []
+    mock_dal.get_top_categories.return_value = []
+    mock_dal.get_top_vendors_by_category.return_value = []
+    mock_dal.get_vendor_directory.return_value = []
+
+    app = SpendSightApp(dal=mock_dal)
+
+    async with app.run_test() as pilot:
+        toggle = app.query_one("#ledger-income-toggle")
+        ledger_table = app.query_one("#ledger-pane", DataTable)
+
+        # Initial state: toggle is not active (all transactions loaded)
+        assert ledger_table.row_count == 2
+        row0 = ledger_table.get_row_at(0)
+        assert row0[1] == "Employer"
+
+        # Toggle to expenses only
+        if hasattr(toggle, "value"):
+            toggle.value = True
+        else:
+            await pilot.click("#ledger-income-toggle")
+        await pilot.pause()
+
+        assert ledger_table.row_count == 1
+        row0 = ledger_table.get_row_at(0)
+        assert row0[1] == "Landlord"

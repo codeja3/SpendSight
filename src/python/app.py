@@ -1,6 +1,16 @@
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, VerticalScroll
-from textual.widgets import DataTable, Footer, Header, Input, Label, Select, TabbedContent, TabPane
+from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.widgets import (
+    Button,
+    DataTable,
+    Footer,
+    Header,
+    Input,
+    Label,
+    Select,
+    TabbedContent,
+    TabPane,
+)
 from textual_plotext import PlotextPlot
 
 from src.python.dal import SpendSightDAL
@@ -12,9 +22,21 @@ class SpendSightApp(App):
     TITLE = "SpendSight Analytics"
     
     CSS = """
-    #ledger-pane {
+    #ledger-container {
         width: 2fr;
         height: 100%;
+    }
+    #ledger-header-bar {
+        height: auto;
+        padding: 1;
+        background: $boost;
+        align-horizontal: right;
+    }
+    #ledger-income-toggle {
+        dock: right;
+    }
+    #ledger-pane {
+        height: 1fr;
     }
     #analytics-pane {
         width: 1fr;
@@ -39,6 +61,7 @@ class SpendSightApp(App):
     def __init__(self, dal: SpendSightDAL, **kwargs):
         super().__init__(**kwargs)
         self.dal = dal
+        self.expenses_only = False
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -46,7 +69,11 @@ class SpendSightApp(App):
         
         with Horizontal():
             # Left Pane: The Ledger (Feature 1)
-            yield DataTable(id="ledger-pane")
+            with Vertical(id="ledger-container"):
+                with Horizontal(id="ledger-header-bar"):
+                    yield Label("Ledger Transactions", classes="widget-title")
+                    yield Button("Expenses Only", id="ledger-income-toggle", variant="default")
+                yield DataTable(id="ledger-pane")
             
             # Right Pane: Analytics
             with TabbedContent(id="analytics-pane"):
@@ -82,9 +109,12 @@ class SpendSightApp(App):
 
     def _load_ledger(self) -> None:
         table = self.query_one("#ledger-pane", DataTable)
-        table.add_columns("Date", "Vendor", "Category", "Amount")
-        for row in self.dal.get_ledger(limit=50, offset=0):
+        if not table.columns:
+            table.add_columns("Date", "Vendor", "Category", "Amount")
+        table.clear()
+        for row in self.dal.get_ledger(limit=50, offset=0, expenses_only=self.expenses_only):
             table.add_row(row.date, row.vendor, row.category, f"${row.amount:,.2f}")
+
 
     def _load_vendors(self) -> None:
         # Feature 2.1
@@ -152,6 +182,15 @@ class SpendSightApp(App):
         if event.input.id == "vendor-search-input":
             query = event.value.strip() or None
             self._load_vendor_directory(search=query)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle toggle between All Transactions and Expenses Only."""
+        if event.button.id == "ledger-income-toggle":
+            self.expenses_only = not self.expenses_only
+            event.button.label = "Show All" if self.expenses_only else "Expenses Only"
+            event.button.variant = "primary" if self.expenses_only else "default"
+            self._load_ledger()
+
 
 
 if __name__ == "__main__":

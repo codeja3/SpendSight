@@ -163,9 +163,11 @@ class VendorDirectoryRow(BaseModel):
 ### 6.2 Feature Queries
 
 **Feature 1: Ledger View**
-Retrieves chronological transactions for the main data table, supporting pagination.
-* **Query:** `SELECT transaction_date AS date, vendor, category, amount FROM transactions ORDER BY transaction_date DESC LIMIT ? OFFSET ?`
-* **Parameters:** `limit` (int), `offset` (int)
+Retrieves chronological transactions for the main data table, supporting pagination and an optional filter to exclude positive transactions (income).
+* **Query (Default / All Transactions):** `SELECT transaction_date AS date, vendor, category, amount FROM transactions ORDER BY transaction_date DESC LIMIT ? OFFSET ?`
+* **Query (Expenses Only):** `SELECT transaction_date AS date, vendor, category, amount FROM transactions WHERE amount < 0 ORDER BY transaction_date DESC LIMIT ? OFFSET ?`
+* **Parameters:** `limit` (int), `offset` (int), `expenses_only` (bool = False)
+* **DAL Signature:** `def get_ledger(self, limit: int = 50, offset: int = 0, expenses_only: bool = False) -> list[LedgerRow]`
 
 **Feature 2.1: Top-N Vendors (Highest Spend)**
 Retrieves the vendors with the most negative sum (highest expenses).
@@ -219,7 +221,9 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
 
 * **Main Layout Engine:** Textual `Horizontal` grid.
 * **Left Pane (Ledger):** * Consumes 2/3 of terminal width.
-  * Uses Textual's `DataTable` widget for Feature 1.
+  * Uses Textual's `VerticalScroll` or `Vertical` container wrapping:
+    * A header bar containing a label and a toggle switch or button (id: `ledger-income-toggle`) allowing users to toggle between showing all transactions or filtering to expenses only (`amount < 0`).
+    * Textual's `DataTable` widget (id: `ledger-table` / `ledger-pane`) for Feature 1.
 * **Right Pane (Analytics):** * Consumes 1/3 of terminal width.
   * Uses Textual's `TabbedContent` widget to prevent vertical overflow.
   * **Tab: "Categories"**

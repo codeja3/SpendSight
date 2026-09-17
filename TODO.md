@@ -209,3 +209,17 @@ Execute generalized canonicalization against the local `spendsight.db` database 
 - [x] **T1 - Execute Canonicalization:** Run `uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml`.
 - [x] **T2 - Verify Integrity:** Assert all candidate duplicate vendors (`The Home Depot`, `Costco Wholesale`, `Meijer Store`, `Kinetico Incorporated`, `Zappos.com`) are cleanly consolidated.
 - [x] **T3 - Full Test Suite & Linters:** Run full test suite across Python and Go. Update `MEMORY.md` with decisions.
+
+---
+
+## Phase 12: Positive Transaction (Income) Toggle (TDD)
+
+### Task 34: Income Filter in DAL & Ledger UI (TDD)
+Add `expenses_only: bool = False` filter parameter to `SpendSightDAL.get_ledger()` and integrate a toggle button in `SpendSightApp` above the ledger table.
+- [x] **T1 - Test DAL (Red):** Add unit tests in `tests/python/test_dal.py` asserting `get_ledger(expenses_only=True)` excludes transactions with `amount >= 0`.
+- [x] **T2 - Impl DAL (Red->Green):** Implement `expenses_only` query logic in `SpendSightDAL.get_ledger()` in `src/python/dal.py`.
+- [x] **T3 - Test App UI (Red):** Add unit tests in `tests/python/test_app.py` verifying `#ledger-income-toggle` button/switch renders, defaults to showing all transactions, and clicking/toggling it refreshes the ledger data table to only show negative amounts.
+- [x] **T4 - Impl App UI (Red->Green):** Add toggle widget to `SpendSightApp` layout and implement event handler to reload ledger with filtered transactions.
+- [x] **T5 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`, `mypy src`), and update `MEMORY.md`.
+
+

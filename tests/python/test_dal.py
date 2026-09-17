@@ -4,6 +4,7 @@ import pytest
 
 from src.python.dal import LedgerRow, SpendSightDAL, VendorDirectoryRow
 
+
 @pytest.fixture
 def mock_db(tmp_path):
     # Setup: Create a temporary SQLite database with our exact schema
@@ -50,6 +51,18 @@ def test_get_ledger(mock_db):
     assert isinstance(ledger[0], LedgerRow)
     # Verify ordering: newest transaction (04-14) should be first
     assert ledger[0].date == "2026-04-14"
+
+def test_get_ledger_expenses_only(mock_db):
+    dal = SpendSightDAL(mock_db)
+    # When expenses_only=True, positive transaction (2026-04-14, 5000.0) is excluded
+    ledger = dal.get_ledger(limit=10, offset=0, expenses_only=True)
+
+    assert len(ledger) == 4
+    assert all(row.amount < 0 for row in ledger)
+    # Newest expense should be Landlord (2026-04-13)
+    assert ledger[0].date == "2026-04-13"
+    assert ledger[0].vendor == "Landlord"
+
 
 def test_get_top_vendors(mock_db):
     dal = SpendSightDAL(mock_db)

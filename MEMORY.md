@@ -135,5 +135,16 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Status:* Executed generalized canonicalization on `spendsight.db`. Successfully folded candidate pairs (`The Home Depot` -> `Home Depot`, `Costco Wholesale` -> `Costco`, `Meijer` -> `Meijer Store`, `Kinetico` -> `Kinetico Incorporated`) without manual synonym entries. Total distinct vendors in `spendsight.db` consolidated from 138 to 134.
 * *Verification:* 49 pytest tests pass and all Go tests pass. Linters green.
 
+---
+
+## 12. Phase 12: Positive Transaction (Income) Toggle (TDD)
+
+### Task 34: Income Filter in DAL & Ledger UI (TDD) — DONE
+* *Status:* Implemented `expenses_only: bool = False` parameter in `SpendSightDAL.get_ledger()` (`src/python/dal.py`) and wired `#ledger-income-toggle` Button into `SpendSightApp` (`src/python/app.py`). Unit tests in `tests/python/test_dal.py` and `tests/python/test_app.py` all pass.
+* *Query design:* When `expenses_only=True`, appends `WHERE amount < 0` to chronological ledger query.
+* *UI design:* Placed `#ledger-income-toggle` button in a header bar docked at the top right of the 2/3 ledger pane. Default state displays "Expenses Only" (`expenses_only = False`, `variant="default"`). When clicked, it activates `expenses_only = True`, updates label to "Show All" (`variant="primary"`), and reloads the ledger data table cleanly without resetting table columns or impacting analytics tabs.
+* *Quality Gate:* Full test suites (51 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
+
+
 
 
