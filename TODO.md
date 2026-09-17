@@ -206,6 +206,6 @@ Harden `TransactionEntity` schema and prompts in `src/python/llm.py` to enforce 
 
 ### Task 33: Full Ledger Canonicalization & Integration Verification
 Execute generalized canonicalization against the local `spendsight.db` database and verify automated reduction of vendor fragmentation.
-- [ ] **T1 - Execute Canonicalization:** Run `uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml`.
-- [ ] **T2 - Verify Integrity:** Assert all candidate duplicate vendors (`The Home Depot`, `Costco Wholesale`, `Meijer Store`, `Kinetico Incorporated`, `Zappos.com`) are cleanly consolidated.
-- [ ] **T3 - Full Test Suite & Linters:** Run full test suite across Python and Go. Update `MEMORY.md` with decisions.
+- [x] **T1 - Execute Canonicalization:** Run `uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml`.
+- [x] **T2 - Verify Integrity:** Assert all candidate duplicate vendors (`The Home Depot`, `Costco Wholesale`, `Meijer Store`, `Kinetico Incorporated`, `Zappos.com`) are cleanly consolidated.
+- [x] **T3 - Full Test Suite & Linters:** Run full test suite across Python and Go. Update `MEMORY.md` with decisions.

@@ -122,5 +122,18 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Status:* Configured `Amazon.com`, `Amazon Prime`, and `Amazon Marketplace` under `synonyms:` in `vendor_overrides.yaml`. Added unit test in `tests/python/test_vendor_synonyms.py` verifying that all variants fold into `Amazon` and net algebraic spend correctly.
 * *Database Reconciliation:* Reconciled local `spendsight.db` via `uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml`. Consolidated 4 Amazon variants (72 total transactions, net -$3,428.82) into a single canonical `Amazon` entity. Total distinct vendors reduced from 141 to 138.
 
+## 11. Phase 11: Generalized Vendor Canonicalization & Ingestion Hardening (TDD)
+
+### Task 31: Generalized Algorithmic Canonical Key (TDD) — DONE
+* *Status:* Upgraded `canonical_key` in `src/python/vendor_canonicalize.py` to strip web domains (`.com`, `.org`, `.net`, `.io`), leading articles (`The`, `A`, `An`), corporate suffixes (`Inc`, `Incorporated`, `LLC`, `Corp`, `Co`, `Ltd`), and store qualifiers (`Store`, `Stores`, `Wholesale`, `Supermarket`) before stripping non-alphanumerics. Unit tests in `tests/python/test_vendor_canonicalize.py` all green.
+* *Design decision:* Replaced manual mapping lists with automated rule-based regex pipelines. This allows all future vendors following standard conventions to fold automatically into their root brands without configuring `vendor_overrides.yaml`.
+
+### Task 32: Ingestion Normalization Brand Guidance (TDD) — DONE
+* *Status:* Updated `TransactionEntity` schema definition and system prompt in `src/python/llm.py` to explicitly instruct the local LLM to extract the root parent brand, stripping channel noise, domains, and retail suffixes directly during statement ingestion. Unit tests in `tests/python/test_llm.py` pass.
+
+### Task 33: Full Ledger Canonicalization & Integration Verification — DONE
+* *Status:* Executed generalized canonicalization on `spendsight.db`. Successfully folded candidate pairs (`The Home Depot` -> `Home Depot`, `Costco Wholesale` -> `Costco`, `Meijer` -> `Meijer Store`, `Kinetico` -> `Kinetico Incorporated`) without manual synonym entries. Total distinct vendors in `spendsight.db` consolidated from 138 to 134.
+* *Verification:* 49 pytest tests pass and all Go tests pass. Linters green.
+
 
 
