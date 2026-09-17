@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"spendsight/src/go/db"
@@ -58,8 +59,20 @@ func GetAvailableProfiles() ([]string, error) {
 	return profiles, nil
 }
 
-// ProcessFile coordinates the pipeline: extracts JSON, inserts to DB, and deletes the file.
-func ProcessFile(filePath string, profile string, database *sql.DB, execCmd CommandExecutor) error {
+// ProcessFile coordinates the pipeline: extracts JSON, inserts to DB, deletes
+// the source file (Ephemeral Data Rule), then reconciles vendor spellings.
+//
+// Canonicalization is a post-ingestion step (SPEC.md 6.5): it runs only after a
+// successful commit and file deletion, so the ledger — not the ephemeral source
+// — is what gets consolidated. A canonicalization failure is logged but never
+// fails the ingestion: the source is already deleted and the commit already
+// landed, so the ephemeral-data guarantee holds regardless, and idempotency
+// means a later ingestion or a manual `canonicalize` run reconciles the state.
+func ProcessFile(filePath string, profile string, database *sql.DB, execCmd CommandExecutor, canon Canonicalizer, dbPath string) error {
+	if canon == nil {
+		canon = NoopCanonicalizer
+	}
+
 	// 1. Trigger the extraction pipeline (Python script via Executor)
 	rawJSON, err := execCmd(filePath, profile)
 	if err != nil {
@@ -82,6 +95,13 @@ func ProcessFile(filePath string, profile string, database *sql.DB, execCmd Comm
 	err = os.Remove(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to delete source file %s: %w", filePath, err)
+	}
+
+	// 5. Reconcile vendor spellings. Non-fatal: a failure is logged but never
+	// fails the ingestion, because the source is already deleted and the commit
+	// already landed (see the function doc).
+	if err := canon(dbPath); err != nil {
+		log.Printf("WARNING: vendor canonicalization skipped: %v", err)
 	}
 
 	return nil

@@ -44,7 +44,7 @@ func TestWatcher_Success(t *testing.T) {
 	stopChan := make(chan struct{})
 	go func() {
 		// StartWatcher should be a blocking call
-		err := orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, stopChan)
+		err := orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, orchestrator.NoopCanonicalizer, dbPath, stopChan)
 		if err != nil && err != sql.ErrConnDone { // ErrConnDone is expected on close
 			// In a real test we'd handle this better
 		}
@@ -115,7 +115,7 @@ func TestWatcher_InitialScan(t *testing.T) {
 
 	// 4. Start Watcher (it should process existing files immediately)
 	stopChan := make(chan struct{})
-	go orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, stopChan)
+	go orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, orchestrator.NoopCanonicalizer, dbPath, stopChan)
 
 	// 5. Wait for processing
 	time.Sleep(500 * time.Millisecond)

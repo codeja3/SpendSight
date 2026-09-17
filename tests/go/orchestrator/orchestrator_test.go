@@ -46,7 +46,8 @@ func TestProcessFile(t *testing.T) {
 	}
 
 	// 3. Execute: Run the orchestrator
-	err = orchestrator.ProcessFile(statementPath, "amex_credit", database, mockExecutor)
+	// These pre-existing tests use the no-op canonicalizer so they stay hermetic.
+	err = orchestrator.ProcessFile(statementPath, "amex_credit", database, mockExecutor, orchestrator.NoopCanonicalizer, dbFile.Name())
 	if err != nil {
 		t.Fatalf("ProcessFile failed: %v", err)
 	}

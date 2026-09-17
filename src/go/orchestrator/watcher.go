@@ -18,9 +18,9 @@ type ProfileDiscovery func() ([]string, error)
 
 // StartWatcher begins monitoring the target directory for new financial statements.
 // It performs an initial scan before entering the event-listening loop.
-func StartWatcher(dirPath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, stopChan <-chan struct{}) error {
+func StartWatcher(dirPath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, canon Canonicalizer, dbPath string, stopChan <-chan struct{}) error {
 	// 1. Initial Scan
-	if err := initialScan(dirPath, database, execCmd, discoverProfiles); err != nil {
+	if err := initialScan(dirPath, database, execCmd, discoverProfiles, canon, dbPath); err != nil {
 		return fmt.Errorf("initial scan failed: %w", err)
 	}
 
@@ -38,10 +38,10 @@ func StartWatcher(dirPath string, database *sql.DB, execCmd CommandExecutor, dis
 	fmt.Printf("Watching directory: %s\n", dirPath)
 
 	// 3. Watch Loop
-	return watchLoop(watcher, database, execCmd, discoverProfiles, stopChan)
+	return watchLoop(watcher, database, execCmd, discoverProfiles, canon, dbPath, stopChan)
 }
 
-func initialScan(dirPath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery) error {
+func initialScan(dirPath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, canon Canonicalizer, dbPath string) error {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return err
@@ -50,13 +50,13 @@ func initialScan(dirPath string, database *sql.DB, execCmd CommandExecutor, disc
 	for _, entry := range entries {
 		if !entry.IsDir() && isSupportedFile(entry.Name()) {
 			filePath := filepath.Join(dirPath, entry.Name())
-			processWithLog(filePath, database, execCmd, discoverProfiles)
+			processWithLog(filePath, database, execCmd, discoverProfiles, canon, dbPath)
 		}
 	}
 	return nil
 }
 
-func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, stopChan <-chan struct{}) error {
+func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, canon Canonicalizer, dbPath string, stopChan <-chan struct{}) error {
 	var mu sync.Mutex
 	timers := make(map[string]*time.Timer)
 	
@@ -66,7 +66,7 @@ func watchLoop(watcher *fsnotify.Watcher, database *sql.DB, execCmd CommandExecu
 	// Worker goroutine
 	go func() {
 		for filePath := range queue {
-			processWithLog(filePath, database, execCmd, discoverProfiles)
+			processWithLog(filePath, database, execCmd, discoverProfiles, canon, dbPath)
 		}
 	}()
 
@@ -124,7 +124,7 @@ func isSupportedFile(filePath string) bool {
 	return ext == ".pdf" || ext == ".csv"
 }
 
-func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery) {
+func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, discoverProfiles ProfileDiscovery, canon Canonicalizer, dbPath string) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return
 	}
@@ -156,7 +156,7 @@ func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, 
 	
 	// First attempt with the heuristic
 	fmt.Printf("Attempting first pass with heuristic profile: %s\n", initialProfile)
-	err = ProcessFile(filePath, initialProfile, database, execCmd)
+	err = ProcessFile(filePath, initialProfile, database, execCmd, canon, dbPath)
 	tried[initialProfile] = true
 
 	if err != nil {
@@ -167,9 +167,9 @@ func processWithLog(filePath string, database *sql.DB, execCmd CommandExecutor, 
 			if tried[profile] {
 				continue
 			}
-			
+		
 			log.Printf("Retrying with profile: %s", profile)
-			err = ProcessFile(filePath, profile, database, execCmd)
+			err = ProcessFile(filePath, profile, database, execCmd, canon, dbPath)
 			tried[profile] = true
 			
 			if err == nil {

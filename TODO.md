@@ -146,3 +146,11 @@ Add a user-maintained `vendor_overrides.yaml` so semantic merges the mechanical 
 - [x] **T3 - Test+Impl `--config` CLI flag (Red->Green):** `canonicalize --config <path>`; absent file prints a note and skips, present file is applied.
 - [x] **T4 - Fix before/after count reporting:** Count distinct vendors separately so the reported counts reflect pre/post-merge state (not a post-mutation read).
 - [x] **T5 - Refactor & commit:** Run full suite / ruff / mypy green; commit.
+
+### Task 25: Auto-Canonicalization in the Go Success Path (TDD)
+Wire a `Canonicalizer` into `ProcessFile` so canonicalization runs automatically after every successful ingestion — post-delete, non-fatal, threaded through `StartWatcher`→`{initialScan, watchLoop, processWithLog}`→`ProcessFile`. Wire `main.go` to `PythonCanonicalizer` (auto-run after every ingest); leave `NoopCanonicalizer` as the hermetic test default.
+- [x] **T1 - Design (decision log):** Decide post-delete vs post-insert and non-fatal vs fatal semantics. *Decision:* post-delete, non-fatal — preserves the Ephemeral Data guarantee; idempotency self-heals any skipped run.
+- [x] **T2 - Test (Red):** Add `tests/go/orchestrator/canonicalize_wiring_test.go` asserting exactly-once invocation with the database path on success, `NoopCanonicalizer` lets an ingest proceed without external processes, and the failure path invokes no canonicalization. Verify `go vet`/`go test` fails because `Canonicalizer` is absent.
+- [x] **T3 - Impl `Canonicalizer`, `NoopCanonicalizer`, `PythonCanonicalizer` (Red->Green):** Add `src/go/orchestrator/canonicalize.go`; thread `canon Canonicalizer, dbPath string` through the orchestrator chain; wire `main.go` to `PythonCanonicalizer()`.
+- [x] **T4 - Update pre-existing orchestrator tests:** Pass `NoopCanonicalizer` + `dbFile.Name()` so existing `ProcessFile` / `StartWatcher` call sites stay hermetic.
+- [x] **T5 - Quality gate:** `go test -count=1 ./tests/go/...` green; `gofmt` clean on new files; end-to-end smoke on a scratch DB folds three typo-variant vendors (`T-Mobile` / `TMOBILE` / `T-MOBILE.`) into one via the real `PythonCanonicalizer`.

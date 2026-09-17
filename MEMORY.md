@@ -72,7 +72,12 @@ This document serves as the persistent memory bank for the SpendSight project. I
   * *Decision:* The source file is deleted ONLY on a successful (Exit Code 0) pipeline run.
   * *Reasoning:* Prevents data loss if the LLM inference fails or if a file is malformed.
 
-## 9. Phase 8: Vendor Canonicalization & Data Hygiene
+## 8. Extraction Pipeline Improvements
+* **Defensive Data Cleaning:**
+    * *Decision:* Filter out completely null or empty rows in the `polars` layer.
+    * *Reasoning:* Prevents "ghost" records with `None` values caused by trailing newlines or empty data blocks in bank CSV exports.
+
+## 9. Phase 9: Vendor Canonicalization & Data Hygiene (TDD)
 
 ### Task 23: Post-Ingestion Vendor Canonicalization (TDD) — DONE
 * *Status:* Implemented in `src/python/vendor_canonicalize.py` with a `canonicalize` CLI; tests in `tests/python/test_vendor_canonicalize.py` all green.
@@ -89,7 +94,8 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *CLI:* `canonicalize --input <db> --config vendor_overrides.yaml`; absent config prints a note and skips.
 * *Count bug fixed:* `before`/`after` in `main()` now query a separate connection before calling `apply_canonicalization`, so the reported counts reflect pre/post-merge state even when zero renames occur.
 
-## 8. Extraction Pipeline Improvements
-* **Defensive Data Cleaning:**
-    * *Decision:* Filter out completely null or empty rows in the `polars` layer.
-    * *Reasoning:* Prevents "ghost" records with `None` values caused by trailing newlines or empty data blocks in bank CSV exports.
+### Task 25: Auto-Canonicalization in the Go Success Path (TDD) — DONE
+* *Status:* Added `src/go/orchestrator/canonicalize.go` (`Canonicalizer func(dbPath string) error`, `NoopCanonicalizer` default, `PythonCanonicalizer` that shells out to the §6.5.4 CLI). Threaded `canon Canonicalizer, dbPath string` through `ProcessFile → processWithLog → {initialScan, watchLoop} → StartWatcher`. `main.go` wires the real `PythonCanonicalizer()`; pre-existing orchestrator tests pass `NoopCanonicalizer`. Tests in `tests/go/orchestrator/canonicalize_wiring_test.go` all green; `go vet ./...` clean.
+* *Design decision (post-delete, non-fatal):* Canonicalization runs at the **end** of `ProcessFile` — after `InsertTransactions` commits and after `os.Remove` of the source (Ephemeral Data Rule). Rationale: canonicalization must never re-lex ephemeral data, and it must never block the (already-committed, already-deleted) ingestion. A `Canonicalizer` error is logged (`WARNING: vendor canonicalization skipped: …`) but never returned. Idempotency (§6.5.5) means a skipped run self-heals on the next successful ingestion or a manual `canonicalize`. `canon == nil` safely defaults to `NoopCanonicalizer`.
+* *Failure path:* canonicalization is skipped entirely when the payload fails to parse or `InsertTransactions` errors, so a quarantined file is never subjected to a partial merge.
+* *Verification:* `tests/go/orchestrator/canonicalize_wiring_test.go` verifies invocation on success, safe skip on payload error, non-fatal handling on canonicalizer error, nil-safe handling, and includes `TestPythonCanonicalizer_EndToEnd` folding typo-variant vendors via `PythonCanonicalizer()`.

@@ -102,7 +102,11 @@ Leave this running in a terminal tab. Whenever you drop a `.pdf` or `.csv` bank 
 2. **Trigger** the Python AI pipeline to normalize and categorize transactions (using local SQLite cache and micro-batching).
 3. **Retry** with an alternate profile automatically if the first guess fails (Symmetric Resilience).
 4. **Save** the clean data to SQLite with deduplication (`INSERT OR IGNORE`) and **permanently delete** the original file on success.
-5. **Quarantine** unparsable files that fail all profiles by safely moving them to `/ingest/failed/`.
+5. **Reconcile vendors** — after each successful delete, the ledger is automatically canonicalized: typographically distinct but identical vendors (e.g. `TMOBILE` / `T-Mobile`) are folded into one name by lossless rename, so aggregated spend stays coherent. This step is non-blocking: if canonicalization ever fails, the already-saved and already-deleted ingestion still stands, and the next ingestion self-heals it. You can also run it manually any time:
+```bash
+uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db
+```
+6. **Quarantine** unparsable files that fail all profiles by safely moving them to `/ingest/failed/`.
 
 **2. The Dashboard (Analyzing Spend)**
 To view your financial analytics, run the dashboard command:

@@ -40,7 +40,7 @@ func TestWatcher_QuarantineFailedStatement(t *testing.T) {
 	// 4. Start Watcher
 	stopChan := make(chan struct{})
 	go func() {
-		_ = orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, stopChan)
+		_ = orchestrator.StartWatcher(watchDir, database, mockExecutor, mockDiscovery, orchestrator.NoopCanonicalizer, dbPath, stopChan)
 	}()
 	time.Sleep(100 * time.Millisecond)
 

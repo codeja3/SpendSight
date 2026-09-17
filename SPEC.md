@@ -275,6 +275,17 @@ review_flags:
 
 **Rationale:** `Landsend Inc.` and `Lands' End` differ by an alphanumeric token (`inc`); no mechanical rule can distinguish "inc as decoration" from "inc as part of the name" without a human decision. `Thank You-Mobile` shares no key with `T-Mobile` by construction (it is T-Mobile's ACH/payment processor, not a typo), and even if it did, merging it would silently combine income and expense. Explicit user judgment is the only sound handling.
 
+### 6.5.8 Orchestrator Auto-Wiring (Post-Ingestion, Non-Fatal)
+Canonicalization is invoked **automatically after every successful ingestion** by the Go orchestrator, in addition to remaining available as the standalone CLI of §6.5.4. The wiring contract:
+
+- **Trigger:** at the end of `ProcessFile`, *after* the ledger insert commits and *after* the source file is deleted (Ephemeral Data Rule). By construction, canonicalization always sees a committed ledger and an already-deleted source, so it can never re-lex ephemeral data.
+- **Interface:** a `Canonicalizer func(dbPath string) error` is threaded through `ProcessFile → processWithLog → {initialScan, watchLoop} → StartWatcher`. The orchestrator calls `canonicalizer(dbPath)` on the success path.
+- **Default (real):** `PythonCanonicalizer`, which invokes the §6.5.4 CLI (`uv run python -m src.python.vendor_canonicalize canonicalize --input <db>`) with `vendor_overrides.yaml` resolved from the working directory.
+- **Default (tests / opt-out):** `NoopCanonicalizer`, a hermetic no-op that invokes no external process. Pre-existing orchestrator tests use it; `main.go` wires the real `PythonCanonicalizer`.
+- **Non-fatal semantics:** a non-zero `Canonicalizer` return is logged (`WARNING: vendor canonicalization skipped: …`) but **never fails `ProcessFile` or the watcher**. Rationale: the source file is already deleted and the commit already landed, so the Ephemeral Data guarantee holds regardless; and §6.5.5 idempotency means any skipped canonicalization self-heals on the next successful ingestion or a manual `canonicalize` run.
+- **Failure path is unaffected:** canonicalization is skipped entirely when the payload fails to insert (extraction or `InsertTransactions` error), so a quarantined file is never subjected to a partial merge.
+- **Contract tests:** `tests/go/orchestrator/canonicalize_wiring_test.go` asserts exactly-once invocation with the database path on success, hermetic behavior of `NoopCanonicalizer`, and that the failure path invokes no canonicalization.
+
 ---
 
 ## 7. Orchestrator File Watcher
@@ -293,12 +304,12 @@ The Go orchestrator must provide a resilient file watching mechanism to automate
 3. **Heuristic Guess:** The orchestrator determines an `initial_profile` based on filename keywords (e.g., "credit", "visa", "checking").
 4. **Exhaustive Retry (Symmetric Resilience):** 
     * The orchestrator invokes the pipeline with the `initial_profile`.
-    * **If Success:** Parse JSON, commit to DB, and delete source file.
+    * **If Success:** Parse JSON, commit to DB, delete source file, then run the non-fatal post-ingestion canonicalization (§6.5.8) on the resulting ledger.
     * **If Failure:** The orchestrator iterates through *all* other discovered profiles and retries.
     * **Final Failure:** If all profiles fail, the error is logged to the terminal and the source file is moved to `/ingest/failed/` to prevent infinite re-processing loops while preserving the file for inspection.
 5. **Outcome Handling:**
-    * **Success (Exit Code 0):** Parse the JSON from `stdout`, insert into SQLite (`INSERT OR IGNORE`), and **permanently delete** the source file.
-    * **Failure (Exit Code != 0):** Log the error from `stderr` to the terminal and **move** the unparsable source file into `/ingest/failed/<filename>`.
+     * **Success (Exit Code 0):** Parse the JSON from `stdout`, insert into SQLite (`INSERT OR IGNORE`), **permanently delete** the source file, then run **vendor canonicalization on the database** (see §6.5.8) as a non-fatal post-ingestion step.
+     * **Failure (Exit Code != 0):** Log the error from `stderr` to the terminal and **move** the unparsable source file into `/ingest/failed/<filename>`. Canonicalization is **not** run on the failure path.
 
 ### 7.3 Concurrency & Safety
 * **Sequential Processing:** To maintain database integrity and simple logging, files must be processed one at a time. If multiple files are dropped, they should be queued.

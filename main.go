@@ -69,7 +69,8 @@ func startWatcher() {
 	}
 
 	// 2. Open DB Connection
-	database, err := db.InitDB("spendsight.db")
+	dbPath := "spendsight.db"
+	database, err := db.InitDB(dbPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to connect to database: %v\n", err)
 		os.Exit(1)
@@ -89,7 +90,10 @@ func startWatcher() {
 
 	// 4. Start the Watcher (Blocking call)
 	fmt.Println("SpendSight Watcher active. Drop PDF or CSV statements into './ingest'.")
-	err = orchestrator.StartWatcher("./ingest", database, orchestrator.PythonExecutor, orchestrator.GetAvailableProfiles, stopChan)
+	// Canonicalization runs automatically after every successful ingestion
+	// (SPEC 6.5): it consolidates typographically duplicate vendors by lossless
+	// rename and is non-fatal, so a failure never blocks the ephemeral deletion.
+	err = orchestrator.StartWatcher("./ingest", database, orchestrator.PythonExecutor, orchestrator.GetAvailableProfiles, orchestrator.PythonCanonicalizer(), dbPath, stopChan)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Watcher encountered a fatal error: %v\n", err)
 		os.Exit(1)
