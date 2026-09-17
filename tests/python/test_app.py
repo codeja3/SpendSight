@@ -122,7 +122,7 @@ async def test_ledger_income_toggle():
         LedgerRow(date="2026-04-13", vendor="Landlord", category="Housing", amount=-2000.0),
     ]
 
-    def fake_get_ledger(limit=50, offset=0, expenses_only=False):
+    def fake_get_ledger(limit=None, offset=0, expenses_only=False):
         return expenses_only_txns if expenses_only else all_txns
 
     mock_dal.get_ledger.side_effect = fake_get_ledger

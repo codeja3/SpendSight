@@ -64,6 +64,15 @@ def test_get_ledger_expenses_only(mock_db):
     assert ledger[0].vendor == "Landlord"
 
 
+def test_get_ledger_unbounded(mock_db):
+    dal = SpendSightDAL(mock_db)
+    # When limit=None, all transactions in mock_db (5 total) are returned without truncation
+    ledger = dal.get_ledger(limit=None)
+    assert len(ledger) == 5
+    assert [row.date for row in ledger] == ["2026-04-14", "2026-04-13", "2026-04-12", "2026-04-11", "2026-04-10"]
+
+
+
 def test_get_top_vendors(mock_db):
     dal = SpendSightDAL(mock_db)
     vendors = dal.get_top_vendors(limit_n=2)

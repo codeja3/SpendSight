@@ -124,7 +124,7 @@ class SpendSightApp(App):
         if not table.columns:
             table.add_columns("Date", "Vendor", "Category", "Amount")
         table.clear()
-        for row in self.dal.get_ledger(limit=50, offset=0, expenses_only=self.expenses_only):
+        for row in self.dal.get_ledger(limit=None, offset=0, expenses_only=self.expenses_only):
             table.add_row(row.date, row.vendor, row.category, f"${row.amount:,.2f}")
 
 

@@ -164,6 +164,17 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Design decision:* In SpendSight's canonical sign convention, debits/expenditures are negative (`-`) and income/credits are positive (`+`). Sorting `total_spend ASC` places the highest dollar expenditures (most negative sums, such as -$2,000.00) at the top of the directory, consistent with Feature 2.1 (Top Vendors) and user intuition, with secondary alphabetical tie-breaking.
 * *Quality Gate:* Full test suites (53 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
 
+---
+
+## 15. Phase 15: Unbounded / Full Ledger Listing (TDD)
+
+### Task 37: Allow Full Ledger Listing without 50-Item Cap (TDD) — DONE
+* *Status:* Updated `SpendSightDAL.get_ledger()` signature to `limit: int | None = None` (`src/python/dal.py`) and updated `SpendSightApp._load_ledger()` (`src/python/app.py`) to pass `limit=None`. Unit tests in `tests/python/test_dal.py` and `tests/python/test_app.py` updated and passing.
+* *Query design:* When `limit is not None`, the query appends `LIMIT ? OFFSET ?`. When `limit is None`, pagination clauses are omitted (or `LIMIT -1 OFFSET ?` if offset is non-zero), allowing full historical retrieval of all ledger transactions across all uploaded months and statements.
+* *UI design:* The main ledger `DataTable` in `SpendSightApp` loads all transactions returned by the query and supports vertical scrolling through Textual's container overflow.
+* *Quality Gate:* Full test suites (54 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
+
+
 
 
 

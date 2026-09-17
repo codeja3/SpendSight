@@ -163,11 +163,11 @@ class VendorDirectoryRow(BaseModel):
 ### 6.2 Feature Queries
 
 **Feature 1: Ledger View**
-Retrieves chronological transactions for the main data table, supporting pagination and an optional filter to exclude positive transactions (income).
-* **Query (Default / All Transactions):** `SELECT transaction_date AS date, vendor, category, amount FROM transactions ORDER BY transaction_date DESC LIMIT ? OFFSET ?`
-* **Query (Expenses Only):** `SELECT transaction_date AS date, vendor, category, amount FROM transactions WHERE amount < 0 ORDER BY transaction_date DESC LIMIT ? OFFSET ?`
-* **Parameters:** `limit` (int), `offset` (int), `expenses_only` (bool = False)
-* **DAL Signature:** `def get_ledger(self, limit: int = 50, offset: int = 0, expenses_only: bool = False) -> list[LedgerRow]`
+Retrieves chronological transactions for the main data table, supporting pagination (or unbounded retrieval when `limit=None`) and an optional filter to exclude positive transactions (income).
+* **Query (Default / All Transactions):** `SELECT transaction_date AS date, vendor, category, amount FROM transactions ORDER BY transaction_date DESC [LIMIT ? OFFSET ?]`
+* **Query (Expenses Only):** `SELECT transaction_date AS date, vendor, category, amount FROM transactions WHERE amount < 0 ORDER BY transaction_date DESC [LIMIT ? OFFSET ?]`
+* **Parameters:** `limit` (int | None = None), `offset` (int = 0), `expenses_only` (bool = False)
+* **DAL Signature:** `def get_ledger(self, limit: int | None = None, offset: int = 0, expenses_only: bool = False) -> list[LedgerRow]`
 
 **Feature 2.1: Top-N Vendors (Highest Spend)**
 Retrieves the vendors with the most negative sum (highest expenses).

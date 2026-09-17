@@ -33,17 +33,27 @@ class SpendSightDAL:
             cursor.execute(query, params)
             return cursor.fetchall()
 
-    def get_ledger(self, limit: int = 50, offset: int = 0, expenses_only: bool = False) -> list[LedgerRow]:
+    def get_ledger(self, limit: int | None = None, offset: int = 0, expenses_only: bool = False) -> list[LedgerRow]:
         """Feature 1: Retrieves chronological transactions."""
         where_clause = "WHERE amount < 0" if expenses_only else ""
+        pagination_clause = ""
+        params: list[int] = []
+
+        if limit is not None:
+            pagination_clause = "LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+        elif offset > 0:
+            pagination_clause = "LIMIT -1 OFFSET ?"
+            params.append(offset)
+
         query = f"""
             SELECT transaction_date AS date, vendor, category, amount 
             FROM transactions 
             {where_clause}
             ORDER BY transaction_date DESC 
-            LIMIT ? OFFSET ?
+            {pagination_clause}
         """
-        rows = self._execute_query(query, (limit, offset))
+        rows = self._execute_query(query, tuple(params))
         return [LedgerRow(**dict(row)) for row in rows]
 
 

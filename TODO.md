@@ -242,6 +242,19 @@ Update `SpendSightDAL.get_vendor_directory()` to rank vendors from highest to lo
 - [x] **T2 - Impl DAL (Red->Green):** Update `ORDER BY` clause in `SpendSightDAL.get_vendor_directory()` in `src/python/dal.py` to `ORDER BY total_spend ASC, t.vendor COLLATE NOCASE ASC`.
 - [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check`, `mypy`), and update documentation (`SPEC.md`, `TODO.md`, `MEMORY.md`).
 
+---
+
+## Phase 15: Unbounded / Full Ledger Listing (TDD)
+
+### Task 37: Allow Full Ledger Listing without 50-Item Cap (TDD)
+Support retrieving all ledger transactions by allowing `limit: int | None = None` in `SpendSightDAL.get_ledger()` and updating `SpendSightApp._load_ledger()` to display all transactions.
+- [x] **T1 - Test DAL (Red):** Add unit tests in `tests/python/test_dal.py` verifying `get_ledger(limit=None)` returns all rows across all months/dates without truncation.
+- [x] **T2 - Impl DAL (Red->Green):** Update `SpendSightDAL.get_ledger(limit: int | None = None, offset: int = 0, expenses_only: bool = False)` in `src/python/dal.py` to construct queries dynamically when `limit` is None.
+- [x] **T3 - Test & Impl App UI (Red->Green):** Update `test_app.py` and `SpendSightApp._load_ledger()` in `src/python/app.py` to call `get_ledger(limit=None, expenses_only=self.expenses_only)`.
+- [x] **T4 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check`, `mypy`), and update documentation (`SPEC.md`, `TODO.md`, `MEMORY.md`).
+
+
+
 
 
 
