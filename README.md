@@ -80,6 +80,22 @@ CLI-First Context: Graphical IDEs were entirely eschewed. The entire pipeline, t
 - Full vendor directory query with count, primary category resolution, net spend, and last active date.
 - Dedicated "All Vendors" tab in Textual TUI with live keyboard search filter.
 
+✅ Phase 11: Generalized Vendor Canonicalization & Ingestion Hardening (TDD)
+- Algorithmic canonical key stripping web domains, leading articles, corporate suffixes, and retail qualifiers.
+- Ingestion prompt and schema guidance enforcing the Parent Brand Rule.
+
+✅ Phase 12: Positive Transaction (Income) Toggle (TDD)
+- `expenses_only` query filter in DAL and interactive toggle button above main ledger.
+
+✅ Phase 13: All Vendors Directory Expense Filter Toggle (TDD)
+- `expenses_only` support in `get_vendor_directory` and toggle button in All Vendors tab.
+
+✅ Phase 14: Vendor Directory Ranking by Dollars Spent (TDD)
+- Ranked directory entries by total spend (`total_spend ASC`) from highest expenditure to lowest.
+
+✅ Phase 15: Unbounded / Full Historical Ledger Listing (TDD)
+- Lifted 50-item cap to list all transactions across all statements with full vertical scrolling.
+
 --- 
 
 Built with precision, paranoia, and Polars.

@@ -117,13 +117,13 @@ To view your financial analytics, run the dashboard command:
 
 This launches the native `Textual` UI.
 
-- Left Pane: View your complete, normalized ledger. Use the `[Expenses Only]` / `[Show All]` button above the table to quickly filter out income and view negative expenditures only.
+- Left Pane: View your complete, normalized ledger containing all historical transactions across all statements. Use the `[Expenses Only]` / `[Show All]` button above the table to quickly filter out income and view negative expenditures only.
 
 - Right Pane (Categories): View bar charts of your spending and use the dropdown to drill down into specific vendors within a category.
 
 - Right Pane (Vendors): View your highest and lowest spending targets.
 
-- Right Pane (All Vendors): Browse and search every vendor you have transacted with, including total transaction count, primary category, net spend, and last active date, with live keyboard search filtering. Use the `[Expenses Only]` / `[Show All]` button to filter the directory to negative expenditures only.
+- Right Pane (All Vendors): Browse and search every vendor you have transacted with, ranked from highest to lowest dollars spent, including total transaction count, primary category, net spend, and last active date, with live keyboard search filtering. Use the `[Expenses Only]` / `[Show All]` button to filter the directory to negative expenditures only.
 
 - To exit the dashboard, simply press Ctrl + C.
 
