@@ -109,8 +109,8 @@ def test_get_vendor_directory(mock_db):
     for row in directory:
         assert isinstance(row, VendorDirectoryRow)
 
-    # Alphabetical order: Amazon, Coffee Shop, Employer, Landlord
-    assert [v.name for v in directory] == ["Amazon", "Coffee Shop", "Employer", "Landlord"]
+    # Ordered from highest expenditure to lowest: Landlord (-2000), Amazon (-150), Coffee Shop (-60), Employer (+5000)
+    assert [v.name for v in directory] == ["Landlord", "Amazon", "Coffee Shop", "Employer"]
 
     # Check Coffee Shop aggregation (2 transactions, net -60.0, Dining, last 2026-04-12)
     coffee = next(v for v in directory if v.name == "Coffee Shop")
@@ -196,3 +196,25 @@ def test_get_vendor_directory_search_filter(mock_db):
 
     res_none = dal.get_vendor_directory(search="nonexistent")
     assert res_none == []
+
+
+def test_get_vendor_directory_expenses_only(mock_db):
+    dal = SpendSightDAL(mock_db)
+
+    # In mock_db:
+    # Amazon: -150.0 (1 txn)
+    # Coffee Shop: -50.0, -10.0 (2 txns, -60.0)
+    # Employer: 5000.0 (1 txn) -> pure income
+    # Landlord: -2000.0 (1 txn)
+    
+    # When expenses_only=False, 4 vendors including Employer
+    all_rows = dal.get_vendor_directory(expenses_only=False)
+    assert len(all_rows) == 4
+    assert any(v.name == "Employer" for v in all_rows)
+
+    # When expenses_only=True, Employer is excluded because it has only positive amount
+    # Ordered from highest expenditure to lowest: Landlord (-2000), Amazon (-150), Coffee Shop (-60)
+    expenses_rows = dal.get_vendor_directory(expenses_only=True)
+    assert len(expenses_rows) == 3
+    assert [v.name for v in expenses_rows] == ["Landlord", "Amazon", "Coffee Shop"]
+    assert all(v.total_spend < 0 for v in expenses_rows)

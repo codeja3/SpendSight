@@ -75,7 +75,7 @@ async def test_vendor_directory_search_filters_rows():
         VendorDirectoryRow(name="Amazon", transaction_count=3, total_spend=-150.0, primary_category="Shopping", last_active_date="2026-04-11"),
         VendorDirectoryRow(name="Coffee Shop", transaction_count=2, total_spend=-60.0, primary_category="Dining", last_active_date="2026-04-12"),
     ]
-    def fake_get_vendor_directory(search=None):
+    def fake_get_vendor_directory(search=None, **kwargs):
         if not search:
             return all_vendors
         return [v for v in all_vendors if search.lower() in v.name.lower()]
@@ -153,3 +153,55 @@ async def test_ledger_income_toggle():
         assert ledger_table.row_count == 1
         row0 = ledger_table.get_row_at(0)
         assert row0[1] == "Landlord"
+
+
+@pytest.mark.asyncio
+async def test_vendor_income_toggle():
+    mock_dal = Mock(spec=SpendSightDAL)
+    mock_dal.get_ledger.return_value = []
+    mock_dal.get_top_vendors.return_value = []
+    mock_dal.get_bottom_vendors.return_value = []
+    mock_dal.get_top_categories.return_value = []
+    mock_dal.get_top_vendors_by_category.return_value = []
+
+    all_directory = [
+        VendorDirectoryRow(name="Amazon", transaction_count=3, total_spend=-150.0, primary_category="Shopping", last_active_date="2026-04-11"),
+        VendorDirectoryRow(name="Employer", transaction_count=1, total_spend=5000.0, primary_category="Income", last_active_date="2026-04-14"),
+    ]
+    expenses_only_directory = [
+        VendorDirectoryRow(name="Amazon", transaction_count=3, total_spend=-150.0, primary_category="Shopping", last_active_date="2026-04-11"),
+    ]
+
+    def fake_get_vendor_directory(search=None, expenses_only=False):
+        data = expenses_only_directory if expenses_only else all_directory
+        if search:
+            return [v for v in data if search.lower() in v.name.lower()]
+        return data
+
+    mock_dal.get_vendor_directory.side_effect = fake_get_vendor_directory
+
+    app = SpendSightApp(dal=mock_dal)
+
+    async with app.run_test() as pilot:
+        tabs = app.query_one(TabbedContent)
+        tabs.active = "tab-all-vendors"
+        await pilot.pause()
+
+        toggle = app.query_one("#vendor-income-toggle")
+        vendor_table = app.query_one("#vendor-directory-table", DataTable)
+
+        # Initial state: toggle is default ("Expenses Only", vendor_expenses_only=False)
+        assert vendor_table.row_count == 2
+        row0 = vendor_table.get_row_at(0)
+        assert row0[0] == "Amazon"
+        row1 = vendor_table.get_row_at(1)
+        assert row1[0] == "Employer"
+
+        # Click the toggle button to switch to Expenses Only
+        await pilot.click("#vendor-income-toggle")
+        await pilot.pause()
+
+        assert vendor_table.row_count == 1
+        row0 = vendor_table.get_row_at(0)
+        assert row0[0] == "Amazon"
+        assert toggle.label.plain == "Show All"

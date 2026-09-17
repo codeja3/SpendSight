@@ -123,7 +123,7 @@ This launches the native `Textual` UI.
 
 - Right Pane (Vendors): View your highest and lowest spending targets.
 
-- Right Pane (All Vendors): Browse and search every vendor you have transacted with, including total transaction count, primary category, net spend, and last active date, with live keyboard search filtering.
+- Right Pane (All Vendors): Browse and search every vendor you have transacted with, including total transaction count, primary category, net spend, and last active date, with live keyboard search filtering. Use the `[Expenses Only]` / `[Show All]` button to filter the directory to negative expenditures only.
 
 - To exit the dashboard, simply press Ctrl + C.
 

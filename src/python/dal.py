@@ -99,9 +99,23 @@ class SpendSightDAL:
         rows = self._execute_query(query, (target_category, limit_n))
         return [AggregateRow(**dict(row)) for row in rows]
 
-    def get_vendor_directory(self, search: str | None = None) -> list[VendorDirectoryRow]:
+    def get_vendor_directory(self, search: str | None = None, expenses_only: bool = False) -> list[VendorDirectoryRow]:
         """Feature 2.5: Retrieves all unique vendors with count, net spend, primary category, and last date."""
-        query = """
+        where_conditions = ["t.vendor IS NOT NULL", "t.vendor != ''"]
+        subquery_expense_filter = ""
+        params: list[str] = []
+
+        if expenses_only:
+            where_conditions.append("t.amount < 0")
+            subquery_expense_filter = " AND t2.amount < 0"
+
+        if search:
+            where_conditions.append("LOWER(t.vendor) LIKE ?")
+            params.append(f"%{search.lower()}%")
+
+        where_clause = " AND ".join(where_conditions)
+
+        query = f"""
             SELECT 
                 t.vendor as name,
                 COUNT(*) as transaction_count,
@@ -109,21 +123,17 @@ class SpendSightDAL:
                 (
                     SELECT t2.category 
                     FROM transactions t2 
-                    WHERE t2.vendor = t.vendor 
+                    WHERE t2.vendor = t.vendor{subquery_expense_filter}
                     GROUP BY t2.category 
                     ORDER BY COUNT(*) DESC, t2.category ASC 
                     LIMIT 1
                 ) as primary_category,
                 MAX(t.transaction_date) as last_active_date
             FROM transactions t
-            WHERE t.vendor IS NOT NULL AND t.vendor != ''
+            WHERE {where_clause}
+            GROUP BY t.vendor 
+            ORDER BY total_spend ASC, t.vendor COLLATE NOCASE ASC
         """
-        params: list[str] = []
-        if search:
-            query += " AND LOWER(t.vendor) LIKE ?"
-            params.append(f"%{search.lower()}%")
-
-        query += " GROUP BY t.vendor ORDER BY t.vendor COLLATE NOCASE ASC"
 
         rows = self._execute_query(query, tuple(params))
         return [VendorDirectoryRow(**dict(row)) for row in rows]

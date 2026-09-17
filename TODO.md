@@ -210,8 +210,6 @@ Execute generalized canonicalization against the local `spendsight.db` database 
 - [x] **T2 - Verify Integrity:** Assert all candidate duplicate vendors (`The Home Depot`, `Costco Wholesale`, `Meijer Store`, `Kinetico Incorporated`, `Zappos.com`) are cleanly consolidated.
 - [x] **T3 - Full Test Suite & Linters:** Run full test suite across Python and Go. Update `MEMORY.md` with decisions.
 
----
-
 ## Phase 12: Positive Transaction (Income) Toggle (TDD)
 
 ### Task 34: Income Filter in DAL & Ledger UI (TDD)
@@ -221,5 +219,31 @@ Add `expenses_only: bool = False` filter parameter to `SpendSightDAL.get_ledger(
 - [x] **T3 - Test App UI (Red):** Add unit tests in `tests/python/test_app.py` verifying `#ledger-income-toggle` button/switch renders, defaults to showing all transactions, and clicking/toggling it refreshes the ledger data table to only show negative amounts.
 - [x] **T4 - Impl App UI (Red->Green):** Add toggle widget to `SpendSightApp` layout and implement event handler to reload ledger with filtered transactions.
 - [x] **T5 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`, `mypy src`), and update `MEMORY.md`.
+
+---
+
+## Phase 13: All Vendors Directory Expense Filter Toggle (TDD)
+
+### Task 35: Income / Expenses Toggle in All Vendors Directory (TDD)
+Add `expenses_only: bool = False` filter parameter to `SpendSightDAL.get_vendor_directory()` and wire a toggle button in `SpendSightApp` above the All Vendors directory table.
+- [x] **T1 - Test DAL (Red):** Add unit tests in `tests/python/test_dal.py` asserting `get_vendor_directory(expenses_only=True)` restricts aggregations to negative transactions (`amount < 0`), excluding income-only vendors and filtering out positive transactions from mixed vendors.
+- [x] **T2 - Impl DAL (Red->Green):** Update `SpendSightDAL.get_vendor_directory()` in `src/python/dal.py` to support `expenses_only: bool = False`.
+- [x] **T3 - Test App UI (Red):** Add unit tests in `tests/python/test_app.py` verifying `#vendor-income-toggle` button exists in the All Vendors tab, defaults to "Expenses Only" (`expenses_only=False`), and clicking it toggles state, updates label to "Show All", and refreshes the vendor directory table.
+- [x] **T4 - Impl App UI (Red->Green):** Add `#vendor-income-toggle` button in the All Vendors tab in `SpendSightApp` and handle toggle events to reload the directory table.
+- [x] **T5 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check`, `mypy`), and update documentation (`SPEC.md`, `TODO.md`, `MEMORY.md`).
+
+---
+
+## Phase 14: Vendor Directory Ranking by Dollars Spent (TDD)
+
+### Task 36: Rank All Vendors from Highest to Lowest Spend (TDD)
+Update `SpendSightDAL.get_vendor_directory()` to rank vendors from highest to lowest dollars spent (`total_spend ASC`, where most negative indicates highest expenditure), with secondary alphabetical ordering.
+- [x] **T1 - Test DAL (Red):** Update `test_get_vendor_directory` and `test_get_vendor_directory_expenses_only` in `tests/python/test_dal.py` asserting vendors are sorted from highest expenditure to lowest (`total_spend ASC`, e.g. `Landlord` -$2000, `Amazon` -$150, `Coffee Shop` -$60, `Employer` +$5000).
+- [x] **T2 - Impl DAL (Red->Green):** Update `ORDER BY` clause in `SpendSightDAL.get_vendor_directory()` in `src/python/dal.py` to `ORDER BY total_spend ASC, t.vendor COLLATE NOCASE ASC`.
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check`, `mypy`), and update documentation (`SPEC.md`, `TODO.md`, `MEMORY.md`).
+
+
+
+
 
 

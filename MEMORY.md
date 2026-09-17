@@ -145,6 +145,27 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *UI design:* Placed `#ledger-income-toggle` button in a header bar docked at the top right of the 2/3 ledger pane. Default state displays "Expenses Only" (`expenses_only = False`, `variant="default"`). When clicked, it activates `expenses_only = True`, updates label to "Show All" (`variant="primary"`), and reloads the ledger data table cleanly without resetting table columns or impacting analytics tabs.
 * *Quality Gate:* Full test suites (51 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
 
+---
+
+## 13. Phase 13: All Vendors Directory Expense Filter Toggle (TDD)
+
+### Task 35: Income / Expenses Toggle in All Vendors Directory (TDD) — DONE
+* *Status:* Implemented `expenses_only: bool = False` parameter in `SpendSightDAL.get_vendor_directory()` (`src/python/dal.py`) and integrated `#vendor-income-toggle` Button into `SpendSightApp` (`src/python/app.py`) in the "All Vendors" tab. Unit tests in `tests/python/test_dal.py` and `tests/python/test_app.py` all green.
+* *Query design:* When `expenses_only=True`, appends `t.amount < 0` to `WHERE` filter and `t2.amount < 0` to the correlated category subquery. Vendors with solely positive income transactions are cleanly excluded, and mixed vendors aggregate only expenditure rows.
+* *UI design:* Added `#vendor-header-bar` containing the "Vendor Directory" title and a dock-right `#vendor-income-toggle` button with default label `"Expenses Only"` (`variant="default"`). Clicking toggles `self.vendor_expenses_only`, switches label to `"Show All"` (`variant="primary"`), and refreshes `_load_vendor_directory()` respecting the current search query.
+* *Quality Gate:* Full test suites (53 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
+
+---
+
+## 14. Phase 14: Vendor Directory Ranking by Dollars Spent (TDD)
+
+### Task 36: Rank All Vendors from Highest to Lowest Spend (TDD) — DONE
+* *Status:* Updated ordering in `SpendSightDAL.get_vendor_directory()` (`src/python/dal.py`) to rank vendors by dollars spent (`ORDER BY total_spend ASC, t.vendor COLLATE NOCASE ASC`). Unit tests in `tests/python/test_dal.py` updated and passing.
+* *Design decision:* In SpendSight's canonical sign convention, debits/expenditures are negative (`-`) and income/credits are positive (`+`). Sorting `total_spend ASC` places the highest dollar expenditures (most negative sums, such as -$2,000.00) at the top of the directory, consistent with Feature 2.1 (Top Vendors) and user intuition, with secondary alphabetical tie-breaking.
+* *Quality Gate:* Full test suites (53 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
+
+
+
 
 
 

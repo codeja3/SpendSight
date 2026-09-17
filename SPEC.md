@@ -190,7 +190,7 @@ Drill-down metric for specific budget areas.
 * **Parameters:** `target_category` (str), `limit_n` (int)
 
 **Feature 2.5: All Vendors Directory**
-Retrieves all distinct vendors with transaction counts, net spend, primary category, and last active date, sorted alphabetically (case-insensitive). Supports an optional substring filter.
+Retrieves all distinct vendors with transaction counts, net spend, primary category, and last active date, ranked from highest to lowest dollars spent (most negative `total_spend` first, followed by secondary case-insensitive alphabetical order). Supports an optional substring filter.
 * **Base Query:**
 ```sql
 SELECT 
@@ -209,11 +209,13 @@ SELECT
 FROM transactions t
 WHERE t.vendor IS NOT NULL AND t.vendor != ''
 GROUP BY t.vendor
-ORDER BY t.vendor COLLATE NOCASE ASC
+ORDER BY total_spend ASC, t.vendor COLLATE NOCASE ASC
 ```
 * **Filter Query (when search term provided):**
 Appends `AND LOWER(t.vendor) LIKE ?` with parameter `f"%{search.lower()}%"`.
-* **DAL Signature:** `def get_vendor_directory(self, search: str | None = None) -> list[VendorDirectoryRow]`
+* **Expenses Only Filter:**
+When `expenses_only=True`, filters to `amount < 0` within the main table aggregation and subquery category resolution.
+* **DAL Signature:** `def get_vendor_directory(self, search: str | None = None, expenses_only: bool = False) -> list[VendorDirectoryRow]`
 
 ### 6.3 Visual Layout & UI Components (Textual)
 
@@ -232,9 +234,10 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
   * **Tab: "Vendors"**
     * Vertically stacks UI blocks for Feature 2.1 (Highest Spend) and Feature 2.2 (Lowest Spend).
   * **Tab: "All Vendors" (Feature 2.5)**
+    * A header bar containing the title and a toggle button (id: `vendor-income-toggle`) allowing users to toggle between showing all vendors or filtering to expenses only (`amount < 0`).
     * Includes an `Input` widget with placeholder `"Search vendors..."` (id: `vendor-search-input`).
     * Includes a `DataTable` widget (id: `vendor-directory-table`) displaying columns: `Vendor`, `Total Spend`, `Txns`, `Category`, `Last Date`. Primary financial metric (`Total Spend`) is placed adjacent to `Vendor` to guarantee immediate visibility in narrow analytics layouts, formatted as `-$X,XXX.XX` for expenditures and `$X,XXX.XX` for positive net balances.
-    * Filtering updates dynamically when text is entered into `vendor-search-input`.
+    * Filtering updates dynamically when text is entered into `vendor-search-input` or when `vendor-income-toggle` is toggled.
 
 ## 6.5 Vendor Canonicalization
 

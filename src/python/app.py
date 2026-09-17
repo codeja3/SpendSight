@@ -50,6 +50,15 @@ class SpendSightApp(App):
     #category-drill-down {
         height: 1fr;
     }
+    #vendor-header-bar {
+        height: auto;
+        padding: 1;
+        background: $boost;
+        align-horizontal: right;
+    }
+    #vendor-income-toggle {
+        dock: right;
+    }
     #vendor-search-input {
         margin: 1 0;
     }
@@ -62,6 +71,7 @@ class SpendSightApp(App):
         super().__init__(**kwargs)
         self.dal = dal
         self.expenses_only = False
+        self.vendor_expenses_only = False
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -94,7 +104,9 @@ class SpendSightApp(App):
                     yield DataTable(id="bottom-vendors-table")
 
                 with TabPane("All Vendors", id="tab-all-vendors"), VerticalScroll():
-                    yield Label("Vendor Directory", classes="widget-title")
+                    with Horizontal(id="vendor-header-bar"):
+                        yield Label("Vendor Directory", classes="widget-title")
+                        yield Button("Expenses Only", id="vendor-income-toggle", variant="default")
                     yield Input(placeholder="Search vendors...", id="vendor-search-input")
                     yield DataTable(id="vendor-directory-table")
                     
@@ -135,7 +147,7 @@ class SpendSightApp(App):
         if not table.columns:
             table.add_columns("Vendor", "Total Spend", "Txns", "Category", "Last Date")
         table.clear()
-        for row in self.dal.get_vendor_directory(search=search):
+        for row in self.dal.get_vendor_directory(search=search, expenses_only=self.vendor_expenses_only):
             spend_str = f"-${abs(row.total_spend):,.2f}" if row.total_spend < 0 else f"${row.total_spend:,.2f}"
             table.add_row(
                 row.name,
@@ -190,6 +202,13 @@ class SpendSightApp(App):
             event.button.label = "Show All" if self.expenses_only else "Expenses Only"
             event.button.variant = "primary" if self.expenses_only else "default"
             self._load_ledger()
+        elif event.button.id == "vendor-income-toggle":
+            self.vendor_expenses_only = not self.vendor_expenses_only
+            event.button.label = "Show All" if self.vendor_expenses_only else "Expenses Only"
+            event.button.variant = "primary" if self.vendor_expenses_only else "default"
+            search_input = self.query_one("#vendor-search-input", Input)
+            query = search_input.value.strip() or None
+            self._load_vendor_directory(search=query)
 
 
 
