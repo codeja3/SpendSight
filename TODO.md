@@ -200,9 +200,9 @@ Upgrade `canonical_key` in `src/python/vendor_canonicalize.py` to strip web doma
 
 ### Task 32: Ingestion Normalization Brand Guidance (TDD)
 Harden `TransactionEntity` schema and prompts in `src/python/llm.py` to enforce the Parent Brand Rule, ensuring newly ingested transactions strip channels, suffixes, and articles before entering the database.
-- [ ] **T1 - Test (Red):** Add unit tests in `tests/python/test_llm.py` asserting prompt formatting and schema description instruct parent brand normalization.
-- [ ] **T2 - Impl (Red->Green):** Update system prompt and `TransactionEntity` field description in `src/python/llm.py`.
-- [ ] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_llm.py` passes.
+- [x] **T1 - Test (Red):** Add unit tests in `tests/python/test_llm.py` asserting prompt formatting and schema description instruct parent brand normalization.
+- [x] **T2 - Impl (Red->Green):** Update system prompt and `TransactionEntity` field description in `src/python/llm.py`.
+- [x] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_llm.py` passes.
 
 ### Task 33: Full Ledger Canonicalization & Integration Verification
 Execute generalized canonicalization against the local `spendsight.db` database and verify automated reduction of vendor fragmentation.

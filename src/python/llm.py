@@ -1,12 +1,19 @@
+from typing import Literal
+
 import instructor
 from openai import OpenAI
 from pydantic import BaseModel, Field
-from typing import Literal
+
 
 # Our strict LLM extraction schema (from SPEC.md)
 class TransactionEntity(BaseModel):
     vendor: str = Field(
-        description="The clean, normalized name of the business. Strip out store numbers, cities, or payment processor prefixes like 'SQ *' or 'TST*'."
+        description=(
+            "The clean, canonical parent brand name of the business. "
+            "Strip out store numbers, cities, leading articles ('The'), web domains ('.com', '.org'), "
+            "corporate suffixes ('Inc', 'LLC', 'Corp'), store qualifiers ('Store', 'Wholesale', 'Marketplace', 'Prime'), "
+            "and payment processor prefixes like 'SQ *' or 'TST*'."
+        )
     )
     category: Literal[
         "Groceries", "Dining", "Transportation", "Housing", 
@@ -26,6 +33,14 @@ client = instructor.from_openai(
         api_key="ollama",  # required by the OpenAI SDK, but ignored by Ollama
     ),
     mode=instructor.Mode.JSON,
+)
+
+SYSTEM_PROMPT = (
+    "You are a precise financial categorization API. "
+    "Enforce the Parent Brand Rule: normalize vendor names to their root parent brand identity. "
+    "Strip leading articles ('The'), web domains ('.com', '.org'), store/channel qualifiers "
+    "('Store', 'Wholesale', 'Marketplace', 'Prime'), corporate suffixes ('Inc', 'LLC', 'Corp'), "
+    "and location/store numbers. Map to the correct budget category. Do not hallucinate."
 )
 
 def _get_cached_vendors(raw_descriptions: list[str], db_path: str) -> dict[str, TransactionEntity]:
@@ -84,7 +99,7 @@ def normalize_vendor(raw_description: str, model: str = "gemma4:e2b") -> Transac
         messages=[
             {
                 "role": "system",
-                "content": "You are a precise financial categorization API. Normalize the vendor name and map it to the correct category. Do not hallucinate."
+                "content": SYSTEM_PROMPT
             },
             {
                 "role": "user",
@@ -109,7 +124,7 @@ def normalize_batch(raw_descriptions: list[str], model: str = "gemma4:e2b") -> l
         messages=[
             {
                 "role": "system",
-                "content": "You are a precise financial categorization API. Normalize each raw vendor string into a clean vendor and budget category. Return items in the exact same order."
+                "content": f"{SYSTEM_PROMPT} Return items in the exact same order."
             },
             {
                 "role": "user",

@@ -22,6 +22,25 @@ def test_normalize_vendor_returns_structured_entity():
     assert result.vendor == "Local Coffee Shop"
     assert result.category == "Dining"
 
+
+def test_normalize_vendor_prompts_enforce_parent_brand_rule():
+    # Verify the system prompt and field instructions instruct Parent Brand normalization
+    with patch("src.python.llm.client") as mock_client:
+        mock_client.chat.completions.create.return_value = TransactionEntity(
+            vendor="Home Depot",
+            category="Shopping"
+        )
+        normalize_vendor("THE HOME DEPOT #1234")
+        
+        call_kwargs = mock_client.chat.completions.create.call_args.kwargs
+        messages = call_kwargs["messages"]
+        system_msg = next(m["content"] for m in messages if m["role"] == "system")
+        assert "parent brand" in system_msg.lower()
+
+    # Verify field description in TransactionEntity includes brand guidance
+    schema_desc = TransactionEntity.model_fields["vendor"].description or ""
+    assert "corporate suffixes" in schema_desc.lower() or "parent brand" in schema_desc.lower()
+
 def test_normalize_transactions_batch():
     # 1. Setup: A batch of messy strings
     raw_strings = [
