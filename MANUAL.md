@@ -104,7 +104,7 @@ Leave this running in a terminal tab. Whenever you drop a `.pdf` or `.csv` bank 
 4. **Save** the clean data to SQLite with deduplication (`INSERT OR IGNORE`) and **permanently delete** the original file on success.
 5. **Reconcile vendors** — after each successful delete, the ledger is automatically canonicalized: typographically distinct but identical vendors (e.g. `TMOBILE` / `T-Mobile`) are folded into one name by lossless rename, so aggregated spend stays coherent. This step is non-blocking: if canonicalization ever fails, the already-saved and already-deleted ingestion still stands, and the next ingestion self-heals it. You can also run it manually any time:
 ```bash
-uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db
+uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml
 ```
 6. **Quarantine** unparsable files that fail all profiles by safely moving them to `/ingest/failed/`.
 
@@ -127,6 +127,22 @@ This launches the native `Textual` UI.
 
 --- 
 
-**Configuration Notes (`configs.yaml`)**:
+## 🛠️ Configuration Reference
+
+### 1. Bank Profiles & Local LLM (`configs.yaml`)
 - **Local LLM Model:** Set the model under the top-level `llm:` block (e.g., `model: "llama3.2:3b"` or `model: "gemma4:e2b"`).
 - **Bank Profiles:** When adding new accounts, configure `skip_rows`, `column_mapping`, `date_format`, and `sign_multiplier` to enforce the Canonical Sign Standard before dropping statements into `/ingest`.
+
+### 2. Vendor Overrides & Synonyms (`vendor_overrides.yaml`)
+The mechanical canonicalizer handles typographical differences (case, punctuation, spacing). For semantic differences, manage `vendor_overrides.yaml`:
+- **`synonyms:`** Declare intentional vendor merges where spellings differ beyond mechanical rules:
+  ```yaml
+  synonyms:
+    "Landsend Inc.": "Lands' End"
+  ```
+- **`review_flags:`** Exclude false friends from being merged and flag them for manual audit:
+  ```yaml
+  review_flags:
+    "Thank You-Mobile": "T-Mobile ACH processor -- verify category."
+  ```
+The Go watcher automatically detects and applies `vendor_overrides.yaml` if present in the project root.
