@@ -237,14 +237,22 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
 After ingestion completes, the user must be able to invoke a vendor canonicalization routine that reconciles typographically distinct but semantically identical vendor names stored in the `transactions` table, so that amounts attributed to them are coherently aggregated per vendor.
 
 ### 6.5.1 Scope & Equivalence Rule
-The feature scans **all rows** in `transactions` where `vendor IS NOT NULL` and applies a deterministic, pure function `canonical_key(vendor) -> str` that normalizes a vendor name by:
-1. Converting to lowercase.
-2. Stripping all non-alphanumeric characters (spaces, hyphens, periods, asterisks, underscores, etc.).
+The feature scans **all rows** in `transactions` where `vendor IS NOT NULL` and applies a deterministic, pure function `canonical_key(vendor) -> str` that normalizes a vendor name through a multi-stage pipeline:
+1. Converting to lowercase and trimming whitespace.
+2. Stripping standard web top-level domain extensions (`.com`, `.net`, `.org`, `.io`, `.co`, `.us`, `.gov`, `.edu`).
+3. Stripping leading definite and indefinite articles (`the `, `a `, `an `).
+4. Stripping corporate suffixes (`inc`, `incorporated`, `llc`, `corp`, `corporation`, `co`, `company`, `ltd`, `limited`) as whole words.
+5. Stripping generic retail channel and store qualifiers (`store`, `stores`, `wholesale`, `supermarket`) as whole words (preserving the root brand, e.g., `Meijer Store` -> `meijer`, `Costco Wholesale` -> `costco`).
+6. Stripping all non-alphanumeric characters (spaces, hyphens, periods, asterisks, underscores, etc.).
 
 Two vendors are **semantically equivalent** if and only if `canonical_key` returns the same string for both.
-- Examples: `TMOBILE`, `T-Mobile`, `T-MOBILE.`, and `* T-MOBILE *` (a raw description's vendor) all collapse to key `tmobile`; `Quickpark`, `Quick_Park`, and `Quick Park.` all collapse to `quickpark`.
-
-Run-collapsing (treating `aa` and `a` as equal) was deliberately **omitted**: it provides no benefit for the stated examples and risks merging genuinely distinct vendors that merely differ by a doubled character. A 2-step key (lowercase + strip) is the sound, minimally-invasive invariant.
+- Examples:
+  - `TMOBILE`, `T-Mobile`, `T-MOBILE.`, and `* T-MOBILE *` collapse to `tmobile`.
+  - `The Home Depot` and `Home Depot` collapse to `homedepot`.
+  - `Costco` and `Costco Wholesale` collapse to `costco`.
+  - `Meijer` and `Meijer Store` collapse to `meijer`.
+  - `Kinetico Incorporated` and `Kinetico` collapse to `kinetico`.
+  - `Zappos.com` and `Zappos` collapse to `zappos`.
 
 For each equivalence class (one or more distinct vendor spellings sharing a key), the **canonical representative** is:
 - the spelling with the **highest row frequency**;

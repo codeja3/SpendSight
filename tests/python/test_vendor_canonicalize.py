@@ -112,6 +112,29 @@ def test_distinct_letters_are_not_merged():
     assert canonical_key("abc") != canonical_key("abd")
 
 
+def test_canonical_key_generalized_rules():
+    from src.python.vendor_canonicalize import canonical_key
+
+    # 1. Leading articles stripped
+    assert canonical_key("The Home Depot") == canonical_key("Home Depot")
+    assert canonical_key("A Local Bakery") == canonical_key("Local Bakery")
+
+    # 2. Web domains stripped
+    assert canonical_key("Zappos.com") == canonical_key("Zappos")
+    assert canonical_key("Amazon.com") == canonical_key("Amazon")
+    assert canonical_key("JW.ORG") == canonical_key("JW")
+
+    # 3. Corporate suffixes stripped
+    assert canonical_key("Kinetico Incorporated") == canonical_key("Kinetico")
+    assert canonical_key("Landsend Inc.") == canonical_key("Landsend")
+    assert canonical_key("Acme LLC") == canonical_key("Acme")
+    assert canonical_key("Global Corp") == canonical_key("Global")
+
+    # 4. Retail store/channel qualifiers stripped
+    assert canonical_key("Meijer Store") == canonical_key("Meijer")
+    assert canonical_key("Costco Wholesale") == canonical_key("Costco")
+
+
 # -- group selection: most-frequent wins, lexicographic tie-break ------------
 def test_most_frequent_wins_as_canonical():
     from src.python.vendor_canonicalize import compute_canonical_mappings

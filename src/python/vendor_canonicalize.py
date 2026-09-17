@@ -22,6 +22,10 @@ from pathlib import Path
 import yaml
 
 _NON_ALNUM = re.compile(r"[^a-z0-9]")
+_LEADING_ARTICLES = re.compile(r"^(the|a|an)\s+", re.IGNORECASE)
+_WEB_DOMAINS = re.compile(r"\.(com|net|org|io|co|us|gov|edu)(\b|$)", re.IGNORECASE)
+_CORP_SUFFIXES = re.compile(r"\b(inc|incorporated|llc|corp|corporation|co|company|ltd|limited)\b", re.IGNORECASE)
+_RETAIL_QUALIFIERS = re.compile(r"\b(store|stores|wholesale|supermarket)\b", re.IGNORECASE)
 
 # Populated from vendor_overrides.yaml at CLI launch.
 SYNONYMS: dict[str, str] = {}
@@ -32,8 +36,19 @@ DEFAULT_CONFIG = "vendor_overrides.yaml"
 
 
 def canonical_key(vendor: str) -> str:
-    """Return the comparison key for a vendor spelling (lowercase, stripped)."""
-    return _NON_ALNUM.sub("", vendor.lower())
+    """Return the comparison key for a vendor spelling.
+
+    Normalizes by lowercasing, stripping web domains, leading articles,
+    corporate suffixes, and generic retail qualifiers, followed by
+    stripping non-alphanumeric characters.
+    """
+    v = vendor.strip().lower()
+    v = _WEB_DOMAINS.sub("", v)
+    v = _LEADING_ARTICLES.sub("", v)
+    v = _CORP_SUFFIXES.sub("", v)
+    v = _RETAIL_QUALIFIERS.sub("", v)
+    cleaned = _NON_ALNUM.sub("", v)
+    return cleaned if cleaned else _NON_ALNUM.sub("", vendor.lower())
 
 
 def class_key(vendor: str) -> str:

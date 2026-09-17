@@ -187,3 +187,25 @@ Consolidate Amazon variants (`Amazon.com`, `Amazon Prime`, `Amazon Marketplace`)
 - [x] **T1 - Test (Red):** Add unit test in `tests/python/test_vendor_synonyms.py` verifying that configuring Amazon variants folds them into `Amazon`, nets amounts correctly, and remains idempotent.
 - [x] **T2 - Impl (Red->Green):** Add Amazon synonyms to `vendor_overrides.yaml` and run `vendor_canonicalize` against `spendsight.db`.
 - [x] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_vendor_synonyms.py` passes, linters pass, and `spendsight.db` reflects consolidated `Amazon` vendor.
+
+---
+
+## Phase 11: Generalized Vendor Canonicalization & Ingestion Hardening (TDD)
+
+### Task 31: Generalized Algorithmic Canonical Key (TDD)
+Upgrade `canonical_key` in `src/python/vendor_canonicalize.py` to strip web domains, leading articles, corporate suffixes, and generic retail qualifiers without requiring manual synonym entries.
+- [x] **T1 - Test (Red):** Add test cases in `tests/python/test_vendor_canonicalize.py` asserting automatic equivalence for web domains (`zappos.com` == `zappos`), leading articles (`The Home Depot` == `Home Depot`), corporate suffixes (`Kinetico Incorporated` == `Kinetico`), and retail channel qualifiers (`Meijer Store` == `Meijer`, `Costco Wholesale` == `Costco`).
+- [x] **T2 - Impl (Red->Green):** Implement generalized regex transforms in `canonical_key` in `src/python/vendor_canonicalize.py`.
+- [x] **T3 - Refactor & Quality Gate:** Verify all canonicalization tests pass, linters pass, and existing tests remain intact.
+
+### Task 32: Ingestion Normalization Brand Guidance (TDD)
+Harden `TransactionEntity` schema and prompts in `src/python/llm.py` to enforce the Parent Brand Rule, ensuring newly ingested transactions strip channels, suffixes, and articles before entering the database.
+- [ ] **T1 - Test (Red):** Add unit tests in `tests/python/test_llm.py` asserting prompt formatting and schema description instruct parent brand normalization.
+- [ ] **T2 - Impl (Red->Green):** Update system prompt and `TransactionEntity` field description in `src/python/llm.py`.
+- [ ] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_llm.py` passes.
+
+### Task 33: Full Ledger Canonicalization & Integration Verification
+Execute generalized canonicalization against the local `spendsight.db` database and verify automated reduction of vendor fragmentation.
+- [ ] **T1 - Execute Canonicalization:** Run `uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db --config vendor_overrides.yaml`.
+- [ ] **T2 - Verify Integrity:** Assert all candidate duplicate vendors (`The Home Depot`, `Costco Wholesale`, `Meijer Store`, `Kinetico Incorporated`, `Zappos.com`) are cleanly consolidated.
+- [ ] **T3 - Full Test Suite & Linters:** Run full test suite across Python and Go. Update `MEMORY.md` with decisions.
