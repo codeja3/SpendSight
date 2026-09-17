@@ -154,3 +154,24 @@ Wire a `Canonicalizer` into `ProcessFile` so canonicalization runs automatically
 - [x] **T3 - Impl `Canonicalizer`, `NoopCanonicalizer`, `PythonCanonicalizer` (Red->Green):** Add `src/go/orchestrator/canonicalize.go`; thread `canon Canonicalizer, dbPath string` through the orchestrator chain; wire `main.go` to `PythonCanonicalizer()`.
 - [x] **T4 - Update pre-existing orchestrator tests:** Pass `NoopCanonicalizer` + `dbFile.Name()` so existing `ProcessFile` / `StartWatcher` call sites stay hermetic.
 - [x] **T5 - Quality gate:** `go test -count=1 ./tests/go/...` green; `gofmt` clean on new files; end-to-end smoke on a scratch DB folds three typo-variant vendors (`T-Mobile` / `TMOBILE` / `T-MOBILE.`) into one via the real `PythonCanonicalizer`.
+
+---
+
+## Phase 10: Comprehensive Vendor Directory & Search (TDD)
+
+### Task 26: Vendor Directory Data Model & DAL Query (TDD)
+Add `VendorDirectoryRow` and `get_vendor_directory` to `SpendSightDAL` supporting aggregation of transaction count, net spend, primary category, last active date, alphabetical sorting, and substring search (SPEC §6.1, §6.2 Feature 2.5).
+- [x] **T1 - Test (Red):** Add unit tests in `tests/python/test_dal.py` asserting `get_vendor_directory` returns correct `VendorDirectoryRow` fields (name, transaction_count, total_spend, primary_category, last_active_date), handles empty DB, orders alphabetically (case-insensitive), resolves primary category by frequency, and filters correctly when `search` parameter is provided.
+- [x] **T2 - Impl (Red->Green):** Implement `VendorDirectoryRow` and `SpendSightDAL.get_vendor_directory(search: str | None = None)` in `src/python/dal.py`.
+- [x] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_dal.py`, `ruff check src/python/dal.py`, and `mypy src/python/dal.py` pass.
+
+### Task 27: "All Vendors" Tab & Real-Time Search in Textual TUI (TDD)
+Wire a dedicated "All Vendors" tab in `SpendSightApp` featuring an interactive search input and a data table rendering all vendor records with real-time filtering (SPEC §6.3 Feature 2.5).
+- [ ] **T1 - Test (Red):** Add test in `tests/python/test_app.py` verifying the "All Vendors" tab mounts with `#vendor-search-input` and `#vendor-directory-table`, populates rows on load, and dynamically updates rows when text is typed into the search bar.
+- [ ] **T2 - Impl (Red->Green):** Add TabPane "All Vendors", composed with `Input(id="vendor-search-input")` and `DataTable(id="vendor-directory-table")`. Implement `_load_vendor_directory()` on mount and `on_input_changed()` handler for real-time filtering.
+- [ ] **T3 - Refactor & Quality Gate:** Run full test suite (`pytest`, `go test ./...`, `ruff check .`, `mypy src`).
+
+### Task 28: Documentation & Manual Verification
+Update user-facing manual and documentation with instructions of the All Vendors directory.
+- [ ] **T1 - Update MANUAL.md & README.md:** Document the All Vendors tab, columns, and search usage in `MANUAL.md` and `README.md`.
+- [ ] **T2 - Quality Gate & Verification:** Ensure all tests pass, linters are green, and verify the Textual UI mounts without errors.

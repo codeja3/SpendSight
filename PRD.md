@@ -11,6 +11,7 @@ SpendSight is a locally hosted, privacy-first personal finance application desig
 * **Vendor Normalization & Caching:** Raw, messy transaction strings must be accurately normalized into clean vendor entities and categorized using a local LLM, accelerated by an exact-match local cache and micro-batched inference.
 * **Vendor Canonicalization (Post-Ingestion, Auto-Wired):** Ingested statements from different sources do not guarantee a stable spelling for the same vendor, so "TMOBILE" and "T-Mobile" (or "Quickpark" and "Quick Park") land as distinct vendors and fragment spending. After every successful ingestion — i.e., after the ledger is committed and the source file is deleted — the Go orchestrator **automatically** invokes canonicalization, which detects such typographically mismatched but semantically duplicate vendors and consolidates them into a single canonical name by lossless rename (`vendor_cache` is reconciled in parallel). The step is **non-fatal**: a canonicalization error is logged but never blocks the ingestion, whose source file is already deleted and ledger already committed; idempotency means any skipped run self-heals on the next successful ingestion or a manual `canonicalize`. Canonicalization also remains available as a standalone CLI (`uv run python -m src.python.vendor_canonicalize canonicalize --input spendsight.db`) per SPEC §6.5.
 * **Configurable Local Inference Model:** Users must be able to specify which local Ollama model to use for normalization via a top-level `llm` section in `configs.yaml` (e.g. `gemma4:e2b`, `llama3.2:3b`, `phi4`), with a sane default (`gemma4:e2b`).
+* **Comprehensive Vendor Directory:** In addition to Top/Bottom spending highlights, the local terminal dashboard must provide a dedicated, searchable "All Vendors" directory view displaying every distinct vendor the user has done business with, including total transaction count, primary category, net spend, and last active date, with live keyboard search filtering.
 * **CLI-First Operation:** The application backend, orchestrator, and processing tasks will be executed directly via the Command Line Interface (CLI). Graphical IDEs (like Jupyter Notebooks) are explicitly excluded from the development and execution workflow.
 * **Reproducible Packaging:** Go dependencies are tracked via `go.mod`, and Python dependencies are reproducibly managed using `uv` with a project-level `pyproject.toml`.
 * **Persistent Storage:** A lightweight, local relational database acting as the single source of truth.
@@ -69,8 +70,9 @@ sequenceDiagram
 * **Guarantees:** Unique constraints on transaction date, amount, and raw description prevent duplicate entries on repeated imports. A local vendor cache stores previously normalized descriptions.
 
 ### 3.4 Frontend / Visualization (Python)
-* **Role:** Visualizing spending analytics at the vendor and category level.
+* **Role:** Visualizing spending analytics at the vendor and category level, ledger browsing, and full vendor directory searching.
 * **Technology:** CLI-native terminal UI (`Textual`).
+* **Features:** Chronological ledger, Top/Bottom N spending summaries, category distribution charts, category drill-down, and a full searchable Vendor Directory tab.
 
 ## 4. Documentation & Memory Management
 To maintain absolute rigor and context across development sessions, the project will strictly maintain the following root-level files:

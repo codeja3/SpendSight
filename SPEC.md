@@ -151,6 +151,13 @@ class LedgerRow(BaseModel):
 class AggregateRow(BaseModel):
     name: str 
     total_spend: float
+
+class VendorDirectoryRow(BaseModel):
+    name: str
+    transaction_count: int
+    total_spend: float
+    primary_category: str
+    last_active_date: str
 ```
 
 ### 6.2 Feature Queries
@@ -180,6 +187,32 @@ Drill-down metric for specific budget areas.
 * **Query:** `SELECT vendor as name, SUM(amount) as total_spend FROM transactions WHERE category = ? AND amount < 0 GROUP BY vendor ORDER BY total_spend ASC LIMIT ?`
 * **Parameters:** `target_category` (str), `limit_n` (int)
 
+**Feature 2.5: All Vendors Directory**
+Retrieves all distinct vendors with transaction counts, net spend, primary category, and last active date, sorted alphabetically (case-insensitive). Supports an optional substring filter.
+* **Base Query:**
+```sql
+SELECT 
+    t.vendor as name,
+    COUNT(*) as transaction_count,
+    SUM(t.amount) as total_spend,
+    (
+        SELECT t2.category 
+        FROM transactions t2 
+        WHERE t2.vendor = t.vendor 
+        GROUP BY t2.category 
+        ORDER BY COUNT(*) DESC, t2.category ASC 
+        LIMIT 1
+    ) as primary_category,
+    MAX(t.transaction_date) as last_active_date
+FROM transactions t
+WHERE t.vendor IS NOT NULL AND t.vendor != ''
+GROUP BY t.vendor
+ORDER BY t.vendor COLLATE NOCASE ASC
+```
+* **Filter Query (when search term provided):**
+Appends `AND LOWER(t.vendor) LIKE ?` with parameter `f"%{search.lower()}%"`.
+* **DAL Signature:** `def get_vendor_directory(self, search: str | None = None) -> list[VendorDirectoryRow]`
+
 ### 6.3 Visual Layout & UI Components (Textual)
 
 The terminal dashboard will utilize a horizontal split layout to balance detailed transactional data with aggregated analytics.
@@ -194,6 +227,10 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
     * Includes a `Select` widget triggering Feature 2.4 (Drill-down).
   * **Tab: "Vendors"**
     * Vertically stacks UI blocks for Feature 2.1 (Highest Spend) and Feature 2.2 (Lowest Spend).
+  * **Tab: "All Vendors" (Feature 2.5)**
+    * Includes an `Input` widget with placeholder `"Search vendors..."` (id: `vendor-search-input`).
+    * Includes a `DataTable` widget (id: `vendor-directory-table`) displaying columns: `Vendor`, `Txns`, `Category`, `Net Spend`, `Last Date`.
+    * Filtering updates dynamically when text is entered into `vendor-search-input`.
 
 ## 6.5 Vendor Canonicalization
 

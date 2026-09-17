@@ -99,3 +99,10 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Design decision (post-delete, non-fatal):* Canonicalization runs at the **end** of `ProcessFile` — after `InsertTransactions` commits and after `os.Remove` of the source (Ephemeral Data Rule). Rationale: canonicalization must never re-lex ephemeral data, and it must never block the (already-committed, already-deleted) ingestion. A `Canonicalizer` error is logged (`WARNING: vendor canonicalization skipped: …`) but never returned. Idempotency (§6.5.5) means a skipped run self-heals on the next successful ingestion or a manual `canonicalize`. `canon == nil` safely defaults to `NoopCanonicalizer`.
 * *Failure path:* canonicalization is skipped entirely when the payload fails to parse or `InsertTransactions` errors, so a quarantined file is never subjected to a partial merge.
 * *Verification:* `tests/go/orchestrator/canonicalize_wiring_test.go` verifies invocation on success, safe skip on payload error, non-fatal handling on canonicalizer error, nil-safe handling, and includes `TestPythonCanonicalizer_EndToEnd` folding typo-variant vendors via `PythonCanonicalizer()`.
+
+## 10. Phase 10: Comprehensive Vendor Directory & Search (TDD)
+
+### Task 26: Vendor Directory Data Model & DAL Query (TDD) — DONE
+* *Status:* Implemented `VendorDirectoryRow` and `get_vendor_directory(search: str | None = None)` in `src/python/dal.py`; unit tests in `tests/python/test_dal.py` all green.
+* *Query design:* Correlated subquery resolves primary category by maximum frequency with alphabetical tie-breaking; aggregates total transaction count, algebraic net spend, and latest transaction date. Sorted alphabetically (`COLLATE NOCASE ASC`). Case-insensitive substring filter enabled via `AND LOWER(t.vendor) LIKE ?`.
+
