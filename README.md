@@ -37,6 +37,8 @@ sequenceDiagram
     Py-->>Go: Return Structured Payload
     Go->>DB: Insert & Verify Records
     Go->>Dir: Securely Delete Original File
+    Go->>Py: Post-Ingest Canonicalize (CLI Exec)
+    Py->>DB: Reconcile Duplicate Vendors & Sync Cache
     
     U->>DB: Query via Terminal UI (Textual)
 ```
@@ -68,6 +70,11 @@ CLI-First Context: Graphical IDEs were entirely eschewed. The entire pipeline, t
 ✅ Phase 7: Resilience, Optimization & Architectural Hardening (Deduplication, Quarantine, Micro-Batching & Caching)
 
 ✅ Phase 8: Configurable Local Model Selection (YAML-Driven)
+
+✅ Phase 9: Post-Ingestion Vendor Canonicalization & Data Hygiene (TDD)
+- Automated post-delete vendor deduplication by lossless rename.
+- Semantic synonym folds and review flags via `vendor_overrides.yaml`.
+- Non-fatal auto-wiring in Go orchestrator success path.
 
 --- 
 
