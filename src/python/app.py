@@ -103,14 +103,15 @@ class SpendSightApp(App):
         # Feature 2.5: Populate the All Vendors directory table
         table = self.query_one("#vendor-directory-table", DataTable)
         if not table.columns:
-            table.add_columns("Vendor", "Txns", "Category", "Net Spend", "Last Date")
+            table.add_columns("Vendor", "Total Spend", "Txns", "Category", "Last Date")
         table.clear()
         for row in self.dal.get_vendor_directory(search=search):
+            spend_str = f"-${abs(row.total_spend):,.2f}" if row.total_spend < 0 else f"${row.total_spend:,.2f}"
             table.add_row(
                 row.name,
+                spend_str,
                 str(row.transaction_count),
                 row.primary_category,
-                f"${row.total_spend:,.2f}",
                 row.last_active_date,
             )
 

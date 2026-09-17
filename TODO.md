@@ -175,3 +175,15 @@ Wire a dedicated "All Vendors" tab in `SpendSightApp` featuring an interactive s
 Update user-facing manual and documentation with instructions of the All Vendors directory.
 - [x] **T1 - Update MANUAL.md & README.md:** Document the All Vendors tab, columns, and search usage in `MANUAL.md` and `README.md`.
 - [x] **T2 - Quality Gate & Verification:** Ensure all tests pass, linters are green, and verify the Textual UI mounts without errors.
+
+### Task 29: Vendor Directory Column Ordering & Sign Formatting (TDD)
+Reorder "All Vendors" data table columns to `Vendor`, `Total Spend`, `Txns`, `Category`, `Last Date` and format negative balances as `-$X,XXX.XX` so financial totals are immediately visible in the 1/3-width analytics pane.
+- [x] **T1 - Test (Red):** Add unit tests in `tests/python/test_app.py` asserting table columns are `("Vendor", "Total Spend", "Txns", "Category", "Last Date")` and formatting of negative and positive amounts matches `-$X,XXX.XX` and `$X,XXX.XX`.
+- [x] **T2 - Impl (Red->Green):** Update `_load_vendor_directory` in `src/python/app.py` with the new column layout and clean sign formatting.
+- [x] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_app.py`, `ruff check src/python/app.py`, and `mypy src/python/app.py` pass.
+
+### Task 30: Canonicalize Amazon Brand Variants (TDD)
+Consolidate Amazon variants (`Amazon.com`, `Amazon Prime`, `Amazon Marketplace`) via `vendor_overrides.yaml` synonyms and verify via unit tests and reconciliation of `spendsight.db`.
+- [ ] **T1 - Test (Red):** Add unit test in `tests/python/test_vendor_synonyms.py` verifying that configuring Amazon variants folds them into `Amazon`, nets amounts correctly, and remains idempotent.
+- [ ] **T2 - Impl (Red->Green):** Add Amazon synonyms to `vendor_overrides.yaml` and run `vendor_canonicalize` against `spendsight.db`.
+- [ ] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_vendor_synonyms.py` passes, linters pass, and `spendsight.db` reflects consolidated `Amazon` vendor.

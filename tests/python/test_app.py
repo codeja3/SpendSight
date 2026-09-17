@@ -87,10 +87,25 @@ async def test_vendor_directory_search_filters_rows():
     async with app.run_test() as pilot:
         search_input = app.query_one("#vendor-search-input", Input)
         vendor_table = app.query_one("#vendor-directory-table", DataTable)
+        
+        # Verify column ordering: "Total Spend" must precede "Txns" to ensure visibility in 1/3 pane
+        col_labels = [col.label.plain for col in vendor_table.columns.values()]
+        assert col_labels == ["Vendor", "Total Spend", "Txns", "Category", "Last Date"]
+
+        # Verify initial row count and proper negative currency formatting (-$150.00, not $-150.00)
         assert vendor_table.row_count == 2
+        first_row = vendor_table.get_row_at(0)
+        assert first_row[0] == "Amazon"
+        assert first_row[1] == "-$150.00"
+        assert first_row[2] == "3"
+        assert first_row[3] == "Shopping"
+        assert first_row[4] == "2026-04-11"
 
         # Simulate typing into the search box
         search_input.value = "coffee"
         await pilot.pause()
 
         assert vendor_table.row_count == 1
+        filtered_row = vendor_table.get_row_at(0)
+        assert filtered_row[0] == "Coffee Shop"
+        assert filtered_row[1] == "-$60.00"

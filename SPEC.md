@@ -229,7 +229,7 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
     * Vertically stacks UI blocks for Feature 2.1 (Highest Spend) and Feature 2.2 (Lowest Spend).
   * **Tab: "All Vendors" (Feature 2.5)**
     * Includes an `Input` widget with placeholder `"Search vendors..."` (id: `vendor-search-input`).
-    * Includes a `DataTable` widget (id: `vendor-directory-table`) displaying columns: `Vendor`, `Txns`, `Category`, `Net Spend`, `Last Date`.
+    * Includes a `DataTable` widget (id: `vendor-directory-table`) displaying columns: `Vendor`, `Total Spend`, `Txns`, `Category`, `Last Date`. Primary financial metric (`Total Spend`) is placed adjacent to `Vendor` to guarantee immediate visibility in narrow analytics layouts, formatted as `-$X,XXX.XX` for expenditures and `$X,XXX.XX` for positive net balances.
     * Filtering updates dynamically when text is entered into `vendor-search-input`.
 
 ## 6.5 Vendor Canonicalization
