@@ -173,5 +173,5 @@ Wire a dedicated "All Vendors" tab in `SpendSightApp` featuring an interactive s
 
 ### Task 28: Documentation & Manual Verification
 Update user-facing manual and documentation with instructions of the All Vendors directory.
-- [ ] **T1 - Update MANUAL.md & README.md:** Document the All Vendors tab, columns, and search usage in `MANUAL.md` and `README.md`.
-- [ ] **T2 - Quality Gate & Verification:** Ensure all tests pass, linters are green, and verify the Textual UI mounts without errors.
+- [x] **T1 - Update MANUAL.md & README.md:** Document the All Vendors tab, columns, and search usage in `MANUAL.md` and `README.md`.
+- [x] **T2 - Quality Gate & Verification:** Ensure all tests pass, linters are green, and verify the Textual UI mounts without errors.

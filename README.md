@@ -76,6 +76,10 @@ CLI-First Context: Graphical IDEs were entirely eschewed. The entire pipeline, t
 - Semantic synonym folds and review flags via `vendor_overrides.yaml`.
 - Non-fatal auto-wiring in Go orchestrator success path.
 
+✅ Phase 10: Comprehensive Vendor Directory & Search (TDD)
+- Full vendor directory query with count, primary category resolution, net spend, and last active date.
+- Dedicated "All Vendors" tab in Textual TUI with live keyboard search filter.
+
 --- 
 
 Built with precision, paranoia, and Polars.

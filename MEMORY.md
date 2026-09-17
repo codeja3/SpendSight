@@ -110,4 +110,9 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *Status:* Added "All Vendors" `TabPane` to `SpendSightApp` in `src/python/app.py` with `Input(id="vendor-search-input")` and `DataTable(id="vendor-directory-table")`. Tests in `tests/python/test_app.py` verifying mount, table columns/rows, and dynamic live search filtering are green.
 * *Interaction:* Real-time filtering handled via `on_input_changed`, querying `dal.get_vendor_directory(search=query)` and rebuilding table rows cleanly without layout remounting.
 
+### Task 28: Documentation & Manual Verification — DONE
+* *Status:* Updated `MANUAL.md` and `README.md` to document the All Vendors directory tab, its 5 columns (Vendor, Txns, Category, Net Spend, Last Date), and live search input.
+* *Verification:* Full test suite (`pytest`, `go test ./...`) and linters green.
+
+
 
