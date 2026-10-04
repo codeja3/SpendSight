@@ -11,6 +11,7 @@ dependencies = [
     "plotext>=5.2.8",
     "polars>=1.20.0",
     "pydantic>=2.10.0",
+    "nicegui>=2.0.0",
     "pyyaml>=6.0.2",
     "textual>=1.0.0",
     "textual-plotext>=0.4.0",

@@ -127,6 +127,20 @@ This launches the native `Textual` UI.
 
 - To exit the dashboard, simply press Ctrl + C.
 
+**3. The Web GUI (Browser Analytics)**
+If you prefer an interactive browser experience with richer charts and responsive data tables, run the NiceGUI web interface:
+
+```bash
+./spendsight gui
+```
+*(Alternatively: `uv run python -m src.python.gui`)*
+
+This starts a local web server at `http://localhost:8080`:
+- **Left Pane:** Paginated, sortable transaction ledger with an `Expenses Only` toggle.
+- **Right Pane (Categories):** Interactive ECharts category expenditure visualization and dropdown category drill-down table.
+- **Right Pane (Vendors):** High-level Top 5 Highest Spends and Bottom 5 Lowest Spends summary cards.
+- **Right Pane (All Vendors):** Searchable directory of all vendors with real-time text filtering and an `Expenses Only` toggle.
+
 --- 
 
 ## 🛠️ Configuration Reference

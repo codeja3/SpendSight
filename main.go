@@ -24,6 +24,8 @@ func main() {
 		initDatabase()
 	case "dashboard":
 		launchDashboard()
+	case "gui":
+		launchGUI()
 	case "watch":
 		startWatcher()
 	default:
@@ -112,6 +114,18 @@ func launchDashboard() {
 	}
 }
 
+func launchGUI() {
+	cmd := exec.Command("uv", "run", "python", "-m", "src.python.gui")
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "\nGUI exited with error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 func printUsage() {
 	fmt.Println("SpendSight: Privacy-First Personal Finance CLI")
 	fmt.Println("Usage: spendsight <command> [flags]")
@@ -121,4 +135,5 @@ func printUsage() {
 	fmt.Println("    Flags:")
 	fmt.Println("      --mock  Bypass LLM and return predefined JSON for testing")
 	fmt.Println("  dashboard  Launch the interactive Textual analytics UI")
+	fmt.Println("  gui        Launch the interactive NiceGUI web UI")
 }

@@ -40,7 +40,7 @@ sequenceDiagram
     Go->>Py: Post-Ingest Canonicalize (CLI Exec)
     Py->>DB: Reconcile Duplicate Vendors & Sync Cache
     
-    U->>DB: Query via Terminal UI (Textual)
+    U->>DB: Query via Terminal TUI (Textual) or Web UI (NiceGUI)
 ```
 
 ## 🗺️ The Development Journey (Methodology)
@@ -95,6 +95,10 @@ CLI-First Context: Graphical IDEs were entirely eschewed. The entire pipeline, t
 
 ✅ Phase 15: Unbounded / Full Historical Ledger Listing (TDD)
 - Lifted 50-item cap to list all transactions across all statements with full vertical scrolling.
+
+✅ Phase 16: NiceGUI Dual Frontend Rendering (TDD)
+- Dual rendering architecture supporting both Terminal TUI (`spendsight dashboard`) and Browser Web UI (`spendsight gui`).
+- Interactive NiceGUI frontend featuring responsive transactions table, ECharts category visualization, category drill-down, and searchable vendor directory.
 
 --- 
 
