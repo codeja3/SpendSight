@@ -174,6 +174,25 @@ This document serves as the persistent memory bank for the SpendSight project. I
 * *UI design:* The main ledger `DataTable` in `SpendSightApp` loads all transactions returned by the query and supports vertical scrolling through Textual's container overflow.
 * *Quality Gate:* Full test suites (54 pytest, 3 Go test packages) pass, `ruff` and `mypy` clean.
 
+---
+
+## 16. Phase 16: NiceGUI Dual Frontend Rendering (TDD)
+
+### Task 38: Dependencies & CLI Entrypoint — DONE
+* *Status:* Added `nicegui>=2.0.0` to `pyproject.toml` and synchronized runtime environment via `uv sync`. Added `gui` subcommand to `main.go` and updated `printUsage()`.
+* *Design decision:* Dual-rendering coexistence. The CLI supports both `spendsight dashboard` (Textual terminal dashboard) and `spendsight gui` (NiceGUI local browser dashboard), both powered by the unchanged `SpendSightDAL`.
+
+### Task 39: NiceGUI Web UI Construction (TDD) — DONE
+* *Status:* Implemented `src/python/gui.py` with `build_gui(dal: SpendSightDAL)` and `tests/python/test_gui.py`.
+* *Architecture & Layout:*
+  * Left pane (2/3 width): Responsive ledger table with pagination, column sorting, and `"Expenses Only"` toggle button.
+  * Right pane (1/3 width): 3 tabs:
+    1. Categories: Interactive ECharts bar visualization of top 10 categories + dropdown category selector triggering drill-down vendor table.
+    2. Vendors: Top 5 Highest Spends and Bottom 5 Lowest Spends summary tables.
+    3. All Vendors: Vendor directory table with real-time text search and `"Expenses Only"` toggle.
+* *Quality Gate:* All 58 pytest tests and 3 Go test packages passed. Linting (`ruff`) and type-checking (`mypy`) clean.
+
+
 
 
 

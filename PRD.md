@@ -71,7 +71,9 @@ sequenceDiagram
 
 ### 3.4 Frontend / Visualization (Python)
 * **Role:** Visualizing spending analytics at the vendor and category level, ledger browsing, and full vendor directory searching.
-* **Technology:** CLI-native terminal UI (`Textual`).
+* **Technology:** Dual rendering engines sharing a unified Data Access Layer (`SpendSightDAL`):
+  1. **CLI Terminal UI (`Textual`):** Keyboard-driven terminal dashboard launched via `spendsight dashboard` (or `uv run python -m src.python.app`).
+  2. **Browser Web UI (`NiceGUI`):** Local web dashboard featuring interactive charts and reactive data grids launched via `spendsight gui` (or `uv run python -m src.python.gui`).
 * **Features:** Chronological ledger, Top/Bottom N spending summaries, category distribution charts, category drill-down, and a full searchable Vendor Directory tab.
 
 ## 4. Documentation & Memory Management
@@ -96,4 +98,4 @@ To maintain absolute rigor and context across development sessions, the project 
 7. Golang verifies data integrity and commits records to SQLite with `INSERT OR IGNORE` deduplication.
 8. If commit succeeds: Golang securely deletes the original statement file.
 9. If processing fails across all candidate profiles: Golang moves the file to `/ingest/failed/` and logs the failure.
-10. User executes the `Textual` dashboard via CLI to query SQLite and view analytics.
+10. User executes the `Textual` terminal dashboard (`spendsight dashboard`) or `NiceGUI` web UI (`spendsight gui`) via CLI to query SQLite and view analytics.

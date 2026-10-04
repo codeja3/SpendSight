@@ -239,6 +239,31 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
     * Includes a `DataTable` widget (id: `vendor-directory-table`) displaying columns: `Vendor`, `Total Spend`, `Txns`, `Category`, `Last Date`. Primary financial metric (`Total Spend`) is placed adjacent to `Vendor` to guarantee immediate visibility in narrow analytics layouts, formatted as `-$X,XXX.XX` for expenditures and `$X,XXX.XX` for positive net balances.
     * Filtering updates dynamically when text is entered into `vendor-search-input` or when `vendor-income-toggle` is toggled.
 
+### 6.4 Web Layout & UI Components (NiceGUI)
+
+To complement the terminal UI with rich browser-based visualization, a dual-rendering frontend is provided in `src/python/gui.py` using `NiceGUI`. It consumes the identical `SpendSightDAL` interface and methods without altering backend or database logic.
+
+* **Module Entrypoint:** `src/python/gui.py` via function `create_app(dal: SpendSightDAL) -> ui` and CLI execution `uv run python -m src.python.gui` (or `spendsight gui`).
+* **Main Layout:**
+  * Top navigation header with title `"SpendSight Analytics"` and subtitle `"Privacy-First Local Finance"`.
+  * Responsive split view / grid layout:
+    * **Left / Main Pane (Ledger):**
+      * Header bar with title `"Ledger Transactions"` and a toggle button (`id: ledger-toggle`) to switch between `"Show All"` and `"Expenses Only"`.
+      * Interactive table (`ui.table` or `ui.aggrid`) showing columns: `Date`, `Vendor`, `Category`, `Amount`. Negative expenditures are formatted with red/subtle styling and positive income with green/bold styling. Pagination and column sorting enabled natively.
+    * **Right / Analytics Pane (Tabs):**
+      * Tabbed container with 3 tabs:
+        1. **Categories Tab:**
+           * ECharts bar/pie chart displaying Top Expenses by Category (`dal.get_top_categories(10)`).
+           * Dropdown selector (`ui.select`) for Category Drill-down.
+           * Drill-down vendor table showing top vendors for the selected category (`dal.get_top_vendors_by_category`).
+        2. **Vendors Tab:**
+           * Top 5 Highest Spends card with formatted summary table (`dal.get_top_vendors(5)`).
+           * Bottom 5 Lowest Spends card with formatted summary table (`dal.get_bottom_vendors(5)`).
+        3. **All Vendors Tab:**
+           * Header bar with toggle button (`id: vendor-toggle`) for `"Expenses Only"` vs `"Show All"`.
+           * Real-time search input (`ui.input`) with placeholder `"Search vendors..."`.
+           * Vendor directory table displaying columns: `Vendor`, `Total Spend`, `Txns`, `Category`, `Last Date`, sorted by highest expenditure first (`total_spend ASC`).
+
 ## 6.5 Vendor Canonicalization
 
 After ingestion completes, the user must be able to invoke a vendor canonicalization routine that reconciles typographically distinct but semantically identical vendor names stored in the `transactions` table, so that amounts attributed to them are coherently aggregated per vendor.

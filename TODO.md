@@ -253,6 +253,22 @@ Support retrieving all ledger transactions by allowing `limit: int | None = None
 - [x] **T3 - Test & Impl App UI (Red->Green):** Update `test_app.py` and `SpendSightApp._load_ledger()` in `src/python/app.py` to call `get_ledger(limit=None, expenses_only=self.expenses_only)`.
 - [x] **T4 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check`, `mypy`), and update documentation (`SPEC.md`, `TODO.md`, `MEMORY.md`).
 
+---
+
+## Phase 16: NiceGUI Dual Frontend Rendering (TDD)
+
+### Task 38: Dependencies & CLI Entrypoint
+Add `nicegui` dependency to `pyproject.toml` and expose `gui` subcommand in `main.go` and `src.python.gui`.
+- [x] **T1 - Dependencies:** Add `nicegui>=2.0.0` to `pyproject.toml` and synchronize environment via `uv sync`.
+- [x] **T2 - Go CLI Subcommand:** Add `gui` command to `main.go` pointing to `uv run python -m src.python.gui` alongside `dashboard`.
+
+### Task 39: NiceGUI Web UI Construction (TDD)
+Implement `src/python/gui.py` consuming `SpendSightDAL` with full parity to the Textual interface.
+- [x] **T1 - Test GUI Structure (Red):** Add unit tests in `tests/python/test_gui.py` asserting GUI layout, tabs, ledger rows, toggles, category chart data, and vendor directory rendering using mocked `SpendSightDAL`.
+- [x] **T2 - Impl GUI Module (Red->Green):** Build `src/python/gui.py` with `build_gui(dal: SpendSightDAL)` creating the ledger grid, toggle buttons, ECharts category visualization, category drill-down selector, top/bottom vendor summaries, and searchable vendor directory.
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`, `mypy src`), and update documentation (`MEMORY.md`, `MANUAL.md`, `README.md`).
+
+
 
 
 
