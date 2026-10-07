@@ -205,6 +205,26 @@ This document serves as the persistent memory bank for the SpendSight project. I
   * Contracts & Docs: Synchronized `PRD.md`, `SPEC.md`, `README.md`, and `MANUAL.md`.
 * *Quality Gate:* Full test suites pass (`pytest`, `go test ./...`), `ruff` and `mypy` clean.
 
+---
+
+## 18. Phase 18: Hybrid Analytics-First GUI Redesign (TDD)
+
+### Task 41: DAL Additions for Executive KPIs & Vendor Transactions (TDD) — DONE
+* *Status:* Implemented `get_executive_kpis()` and `get_transactions_by_vendor()` in `src/python/dal.py` along with `ExecutiveKPIs` Pydantic model. Unit tests in `tests/python/test_dal.py` all green.
+* *Query design:* Single SQL aggregate calculates total expenses (`amount < 0`), net income/cashflow, and active vendor count, paired with top category and top vendor resolutions. `get_transactions_by_vendor` retrieves chronological transactions for granular inspection.
+
+### Task 42: Hybrid Analytics-First GUI Construction (TDD) — DONE
+* *Status:* Re-architected `src/python/gui.py` to center on the Analytics Hub, complemented by an instant slide-out inspection drawer and a dedicated Full Ledger tab. Unit tests in `tests/python/test_gui.py` all green.
+* *Design decisions:*
+  * **Top Navigation:** Two clean global tabs (`Analytics Hub` as default, `Full Ledger` for full-width statement auditing).
+  * **Executive KPI Cards:** 4 high-level metric cards (Total Expenses, Net Income, Active Vendors, Top Expense Vendor).
+  * **Split Analytics Canvas (~45% / ~55%):**
+    * Left: High-impact ECharts category visualization and category vendor drill-down.
+    * Right: Searchable vendor directory and Top 5 / Bottom 5 outlier highlights.
+  * **Contextual Slide-Out Drawer (`ui.right_drawer`):** Clicking any vendor in the directory, drill-down table, or outlier highlights smoothly opens the drawer with exact chronological transactions, preserving context without tab switching.
+* *Quality Gate:* Full test suite (61 pytest tests, 3 Go test packages) passed, `ruff` and `mypy` clean.
+
+
 
 
 

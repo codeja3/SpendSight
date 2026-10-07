@@ -227,3 +227,37 @@ def test_get_vendor_directory_expenses_only(mock_db):
     assert len(expenses_rows) == 3
     assert [v.name for v in expenses_rows] == ["Landlord", "Amazon", "Coffee Shop"]
     assert all(v.total_spend < 0 for v in expenses_rows)
+
+
+def test_get_executive_kpis(mock_db):
+    dal = SpendSightDAL(mock_db)
+    kpis = dal.get_executive_kpis()
+
+    # mock_db contains:
+    # Amazon: -150.0 (Shopping)
+    # Coffee Shop: -50.0, -10.0 (Dining, sum -60.0)
+    # Landlord: -2000.0 (Housing)
+    # Employer: 5000.0 (Income)
+    # Total net spend = -150 - 60 - 2000 + 5000 = 2790.0
+    # Total expenses only = -2210.0
+    # Distinct active vendors = 4 (or 3 expense vendors)
+    # Top expense vendor = Landlord (-2000.0)
+    # Top expense category = Housing (-2000.0)
+    assert kpis.total_expenses == -2210.0
+    assert kpis.net_income == 2790.0
+    assert kpis.active_vendors_count == 4
+    assert kpis.top_expense_category == "Housing"
+    assert kpis.top_expense_vendor == "Landlord"
+
+
+def test_get_transactions_by_vendor(mock_db):
+    dal = SpendSightDAL(mock_db)
+    txns = dal.get_transactions_by_vendor("Coffee Shop")
+
+    assert len(txns) == 2
+    assert all(t.vendor == "Coffee Shop" for t in txns)
+    # Ordered by date descending: 2026-04-12 (-10.0) then 2026-04-10 (-50.0)
+    assert txns[0].amount == -10.0
+    assert txns[0].date == "2026-04-12"
+    assert txns[1].amount == -50.0
+    assert txns[1].date == "2026-04-10"

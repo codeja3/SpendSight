@@ -21,6 +21,13 @@ class VendorDirectoryRow(BaseModel):
     primary_category: str
     last_active_date: str
 
+class ExecutiveKPIs(BaseModel):
+    total_expenses: float
+    net_income: float
+    active_vendors_count: int
+    top_expense_category: str | None
+    top_expense_vendor: str | None
+
 class SpendSightDAL:
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -147,3 +154,42 @@ class SpendSightDAL:
 
         rows = self._execute_query(query, tuple(params))
         return [VendorDirectoryRow(**dict(row)) for row in rows]
+
+    def get_executive_kpis(self) -> ExecutiveKPIs:
+        """Computes top-level KPI metrics: total expenses, net income, active vendor count, top category, and top vendor."""
+        # 1. Total expenses (amount < 0) and Net income (sum of all amounts)
+        totals_query = """
+            SELECT 
+                COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0.0) as total_expenses,
+                COALESCE(SUM(amount), 0.0) as net_income,
+                COUNT(DISTINCT CASE WHEN vendor IS NOT NULL AND vendor != '' THEN vendor END) as active_vendors_count
+            FROM transactions
+        """
+        totals_row = self._execute_query(totals_query)[0]
+
+        # 2. Top category (most negative sum)
+        top_cats = self.get_top_categories(limit_n=1)
+        top_category = top_cats[0].name if top_cats else None
+
+        # 3. Top vendor (most negative sum)
+        top_vens = self.get_top_vendors(limit_n=1)
+        top_vendor = top_vens[0].name if top_vens else None
+
+        return ExecutiveKPIs(
+            total_expenses=float(totals_row["total_expenses"]),
+            net_income=float(totals_row["net_income"]),
+            active_vendors_count=int(totals_row["active_vendors_count"]),
+            top_expense_category=top_category,
+            top_expense_vendor=top_vendor,
+        )
+
+    def get_transactions_by_vendor(self, vendor: str) -> list[LedgerRow]:
+        """Retrieves all chronological transactions for a specific vendor."""
+        query = """
+            SELECT transaction_date AS date, vendor, category, amount 
+            FROM transactions 
+            WHERE vendor = ?
+            ORDER BY transaction_date DESC
+        """
+        rows = self._execute_query(query, (vendor,))
+        return [LedgerRow(**dict(row)) for row in rows]
