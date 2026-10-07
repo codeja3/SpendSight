@@ -17,10 +17,7 @@ def mock_dal() -> Mock:
     dal = Mock(spec=SpendSightDAL)
     dal.get_executive_kpis.return_value = ExecutiveKPIs(
         active_vendors_count=2,
-        top_expense_vendor="Landlord",
-        top_expense_vendor_spend=-2000.00,
-        top_expense_category="Rent",
-        average_spend_per_vendor=-1062.75,
+        median_spend_per_vendor=-105.00,
     )
     dal.get_ledger.return_value = [
         LedgerRow(date="2026-04-12", vendor="Coffee Shop", category="Dining", amount=-5.50),

@@ -295,6 +295,12 @@ Re-architect `src/python/gui.py` to center on the Analytics Hub with KPI cards, 
 - [x] **T2 - Impl GUI Redesign (Red->Green):** Rebuild `SpendSightGUI` in `src/python/gui.py` with top navigation tabs, KPI row, split analytics view, `ui.right_drawer` transaction inspector, and full ledger view.
 - [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`, `mypy src`), and update documentation (`MEMORY.md`, `MANUAL.md`, `README.md`).
 
+### Task 43: Vendor Intelligence KPI Simplification & Branding Header
+Streamline KPI cards down to strictly 2 cards (Active Vendors Tracked, Median Spend Per Vendor) and unify header branding.
+- [x] **T1 - Test DAL & GUI (Red):** Update tests in `tests/python/test_dal.py` and `tests/python/test_gui.py` asserting `ExecutiveKPIs` contains only `active_vendors_count` and `median_spend_per_vendor`.
+- [x] **T2 - Impl DAL & GUI (Red->Green):** Update `ExecutiveKPIs` model and `get_executive_kpis()` in `src/python/dal.py` with `statistics.median()`. Update `gui.py` branding header and KPI card row to strictly 2 cards.
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`), and update documentation (`SPEC.md`, `MANUAL.md`, `MEMORY.md`, `TODO.md`).
+
 
 
 

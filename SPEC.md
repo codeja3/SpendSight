@@ -245,16 +245,14 @@ To prioritize vendor statistics and spend intelligence over raw ledger rows, `sr
 
 * **Module Entrypoint:** `src/python/gui.py` via `build_gui(dal: SpendSightDAL)` and CLI command `spendsight gui`.
 * **Top Navigation Bar:**
-  * Application header with branding `"SpendSight Analytics"` and tagline `"Vendor-Level Spending Intelligence"`.
+  * Application header with branding `"SpendSight: Vendor-Level Spending Intelligence"`.
   * Top navigation tabs:
     1. **`Analytics Hub`** (Default Home View).
     2. **`Full Ledger`** (Auditing & Statement Verification).
 * **View 1: Analytics Hub:**
-  * **Vendor Intelligence KPI Cards Row:**
-    * Active Vendors Tracked count card (`COUNT(DISTINCT vendor)`).
-    * Highest Spend Vendor & spend card.
-    * Average Spend Per Vendor card (`SUM(amount < 0) / COUNT(DISTINCT vendor)`).
-    * Top Expense Category card.
+  * **Vendor Intelligence KPI Cards Row (strictly 2 cards):**
+    * **Active Vendors Tracked** count card (`COUNT(DISTINCT vendor)`).
+    * **Median Spend Per Vendor** card (`statistics.median([spend for each vendor])`).
   * **Split Analytics Columns (~45% / ~55%):**
     * **Left Analytics Column:**
       * ECharts bar visualization of Top 10 Categories (`dal.get_top_categories(10)`).

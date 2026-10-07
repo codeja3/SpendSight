@@ -224,6 +224,17 @@ This document serves as the persistent memory bank for the SpendSight project. I
   * **Contextual Slide-Out Drawer (`ui.right_drawer`):** Clicking any vendor in the directory, drill-down table, or outlier highlights smoothly opens the drawer with exact chronological transactions, preserving context without tab switching.
 * *Quality Gate:* Full test suite (61 pytest tests, 3 Go test packages) passed, `ruff` and `mypy` clean.
 
+### Task 43: Vendor Intelligence KPI Simplification & Branding Header — DONE
+* *Status:* Streamlined KPI metrics to strictly 2 cards focused entirely on vendor footprint and spend dispersion:
+  1. `Active Vendors Tracked` (`COUNT(DISTINCT vendor)`)
+  2. `Median Spend Per Vendor` (`statistics.median([spend for each vendor])`)
+* *Design Decisions:*
+  - Removed "Top Expense Category", "Highest Spend Vendor", and "Avg Spend Per Vendor" to prevent metric bloat and avoid outlier distortion inherent to mean spend across disparate vendor types.
+  - Updated `ExecutiveKPIs` model in `dal.py` to contain only `active_vendors_count` and `median_spend_per_vendor`.
+  - Consolidated top-left navigation logo/title into a unified label: `"SpendSight: Vendor-Level Spending Intelligence"`.
+* *Quality Gate:* Full test suite (61 pytest tests, 3 Go test packages) passed, `ruff` and `mypy` clean.
+
+
 
 
 

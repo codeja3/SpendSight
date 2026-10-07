@@ -233,21 +233,16 @@ def test_get_executive_kpis(mock_db):
     dal = SpendSightDAL(mock_db)
     kpis = dal.get_executive_kpis()
 
-    # mock_db contains:
-    # Amazon: -150.0 (Shopping)
-    # Coffee Shop: -50.0, -10.0 (Dining, sum -60.0)
-    # Landlord: -2000.0 (Housing)
-    # Employer: 5000.0 (Income)
-    # Total expenses only = -2210.0
-    # Distinct active vendors = 4 (Amazon, Coffee Shop, Landlord, Employer)
-    # Average spend per vendor = -2210.0 / 4 = -552.50
-    # Top expense vendor = Landlord (-2000.0)
-    # Top expense category = Housing (-2000.0)
+    # mock_db distinct vendors:
+    # Amazon: -150.0
+    # Coffee Shop: -60.0
+    # Landlord: -2000.0
+    # Employer: 5000.0
+    # Total spends list: [-2000.0, -150.0, -60.0, 5000.0]
+    # Distinct active vendors = 4
+    # Median spend = (-150.0 + -60.0) / 2 = -105.0
     assert kpis.active_vendors_count == 4
-    assert kpis.top_expense_vendor == "Landlord"
-    assert kpis.top_expense_vendor_spend == -2000.0
-    assert kpis.top_expense_category == "Housing"
-    assert kpis.average_spend_per_vendor == -552.50
+    assert kpis.median_spend_per_vendor == -105.0
 
 
 def test_get_transactions_by_vendor(mock_db):
