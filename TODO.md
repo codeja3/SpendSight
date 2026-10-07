@@ -279,6 +279,35 @@ Emphasize vendor-level tracking by adopting the "Vendor-Level Spending Intellige
 - [x] **T3 - Manual & Readme:** Synchronize `README.md`, `MANUAL.md`, and record decisions in `MEMORY.md`.
 - [x] **T4 - Quality Gate & Verification:** Run full test suite (`pytest`, `go test ./...`), rebuild Go binary, and verify CLI output.
 
+---
+
+## Phase 18: Hybrid Analytics-First GUI Redesign (TDD)
+
+### Task 41: DAL Additions for Executive KPIs & Vendor Transactions (TDD)
+Add helper query methods in `SpendSightDAL` to support executive KPI calculations and vendor-specific transactions for the inspection drawer.
+- [x] **T1 - Test DAL (Red):** Add unit tests in `tests/python/test_dal.py` asserting `dal.get_executive_kpis()` returns total spend, active vendor count, top category, and top vendor; and `dal.get_transactions_by_vendor(vendor: str)` returns chronological transactions for a vendor.
+- [x] **T2 - Impl DAL (Red->Green):** Implement `get_executive_kpis()` and `get_transactions_by_vendor()` in `src/python/dal.py`.
+- [x] **T3 - Refactor & Quality Gate:** Verify `pytest tests/python/test_dal.py` passes.
+
+### Task 42: Hybrid Analytics-First GUI Construction (TDD)
+Re-architect `src/python/gui.py` to center on the Analytics Hub with KPI cards, wide category charts, drill-down drawer, and dedicated Full Ledger tab.
+- [x] **T1 - Test GUI Architecture (Red):** Update `tests/python/test_gui.py` to test top-level tabs (Analytics Hub vs Full Ledger), KPI cards rendering, drawer open/close on vendor click, and full-width ledger functionality.
+- [x] **T2 - Impl GUI Redesign (Red->Green):** Rebuild `SpendSightGUI` in `src/python/gui.py` with top navigation tabs, KPI row, split analytics view, `ui.right_drawer` transaction inspector, and full ledger view.
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`, `mypy src`), and update documentation (`MEMORY.md`, `MANUAL.md`, `README.md`).
+
+### Task 43: Vendor Intelligence KPI Simplification & Branding Header
+Streamline KPI cards down to strictly 2 cards (Active Vendors Tracked, Median Spend Per Vendor) and unify header branding.
+- [x] **T1 - Test DAL & GUI (Red):** Update tests in `tests/python/test_dal.py` and `tests/python/test_gui.py` asserting `ExecutiveKPIs` contains only `active_vendors_count` and `median_spend_per_vendor`.
+- [x] **T2 - Impl DAL & GUI (Red->Green):** Update `ExecutiveKPIs` model and `get_executive_kpis()` in `src/python/dal.py` with `statistics.median()`. Update `gui.py` branding header and KPI card row to strictly 2 cards.
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`), and update documentation (`SPEC.md`, `MANUAL.md`, `MEMORY.md`, `TODO.md`).
+
+### Task 44: Smart Adaptive Median Spend Development Graph (TDD)
+Add adaptive temporal line graph for median spend over time occupying 2/3 of top ribbon.
+- [x] **T1 - Test DAL & GUI (Red):** Add unit tests in `tests/python/test_dal.py` asserting adaptive granularity logic (month, quarter, year) and in `tests/python/test_gui.py` asserting trend chart and badge rendering.
+- [x] **T2 - Impl DAL & GUI (Red->Green):** Add `MedianSpendPoint`, `MedianSpendTrend`, and `get_median_spend_trend()` in `src/python/dal.py`. Re-proportion top ribbon in `gui.py` to 1/3 (vertical KPI cards) and 2/3 (interactive trend line chart with adaptive badge).
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`), and update documentation (`SPEC.md`, `MANUAL.md`, `MEMORY.md`, `TODO.md`).
+
+
 
 
 

@@ -158,6 +158,19 @@ class VendorDirectoryRow(BaseModel):
     total_spend: float
     primary_category: str
     last_active_date: str
+
+class ExecutiveKPIs(BaseModel):
+    active_vendors_count: int
+    median_spend_per_vendor: float
+
+class MedianSpendPoint(BaseModel):
+    period: str
+    median_spend: float
+    vendor_count: int
+
+class MedianSpendTrend(BaseModel):
+    granularity: str  # "month", "quarter", or "year"
+    points: list[MedianSpendPoint]
 ```
 
 ### 6.2 Feature Queries
@@ -217,6 +230,40 @@ Appends `AND LOWER(t.vendor) LIKE ?` with parameter `f"%{search.lower()}%"`.
 When `expenses_only=True`, filters to `amount < 0` within the main table aggregation and subquery category resolution.
 * **DAL Signature:** `def get_vendor_directory(self, search: str | None = None, expenses_only: bool = False) -> list[VendorDirectoryRow]`
 
+**Feature 2.6: Executive KPIs**
+Calculates high-level vendor metrics for dashboard KPI cards.
+* **Query:** `SELECT SUM(amount) as total_spend FROM transactions WHERE vendor IS NOT NULL AND vendor != '' GROUP BY vendor`
+* **Metrics Derived:**
+  * `active_vendors_count`: Total number of distinct vendors (`len(rows)`).
+  * `median_spend_per_vendor`: `statistics.median([float(r["total_spend"]) for r in rows])` (or `0.0` if empty).
+* **DAL Signature:** `def get_executive_kpis(self) -> ExecutiveKPIs`
+
+**Feature 2.7: Vendor Transactions (Inspector Drawer)**
+Retrieves full chronological ledger rows for a specific vendor.
+* **Query:** `SELECT transaction_date AS date, vendor, category, amount FROM transactions WHERE vendor = ? ORDER BY transaction_date DESC`
+* **Parameters:** `vendor` (str)
+* **DAL Signature:** `def get_transactions_by_vendor(self, vendor: str) -> list[LedgerRow]`
+
+**Feature 2.8: Smart Median Spend Trend**
+Calculates historical vendor median spend over time, adapting temporal resolution.
+* **Temporal Resolution Logic:**
+  * If distinct months span $\le 24$, granularity = `"month"` (`YYYY-MM`).
+  * If distinct months span $> 24$ and quarters $\le 16$, granularity = `"quarter"` (`YYYY-Q1..Q4`).
+  * Otherwise, granularity = `"year"` (`YYYY`).
+* **Query:**
+```sql
+SELECT 
+    <period_expr> as period,
+    vendor,
+    SUM(amount) as vendor_spend
+FROM transactions
+WHERE transaction_date IS NOT NULL AND transaction_date != ''
+  AND vendor IS NOT NULL AND vendor != ''
+GROUP BY period, vendor
+ORDER BY period ASC
+```
+* **DAL Signature:** `def get_median_spend_trend(self) -> MedianSpendTrend`
+
 ### 6.3 Visual Layout & UI Components (Textual)
 
 The terminal dashboard will utilize a horizontal split layout to balance detailed transactional data with aggregated analytics.
@@ -241,28 +288,40 @@ The terminal dashboard will utilize a horizontal split layout to balance detaile
 
 ### 6.4 Web Layout & UI Components (NiceGUI)
 
-To complement the terminal UI with rich browser-based visualization, a dual-rendering frontend is provided in `src/python/gui.py` using `NiceGUI`. It consumes the identical `SpendSightDAL` interface and methods without altering backend or database logic.
+To prioritize vendor statistics and spend intelligence over raw ledger rows, `src/python/gui.py` employs a **Hybrid Analytics-First Architecture** with a dedicated full ledger tab and a slide-out drawer for inline transaction inspection.
 
-* **Module Entrypoint:** `src/python/gui.py` via function `create_app(dal: SpendSightDAL) -> ui` and CLI execution `uv run python -m src.python.gui` (or `spendsight gui`).
-* **Main Layout:**
-  * Top navigation header with title `"SpendSight Analytics"` and subtitle `"Privacy-First Local Finance"`.
-  * Responsive split view / grid layout:
-    * **Left / Main Pane (Ledger):**
-      * Header bar with title `"Ledger Transactions"` and a toggle button (`id: ledger-toggle`) to switch between `"Show All"` and `"Expenses Only"`.
-      * Interactive table (`ui.table` or `ui.aggrid`) showing columns: `Date`, `Vendor`, `Category`, `Amount`. Negative expenditures are formatted with red/subtle styling and positive income with green/bold styling. Pagination and column sorting enabled natively.
-    * **Right / Analytics Pane (Tabs):**
-      * Tabbed container with 3 tabs:
-        1. **Categories Tab:**
-           * ECharts bar/pie chart displaying Top Expenses by Category (`dal.get_top_categories(10)`).
-           * Dropdown selector (`ui.select`) for Category Drill-down.
-           * Drill-down vendor table showing top vendors for the selected category (`dal.get_top_vendors_by_category`).
-        2. **Vendors Tab:**
-           * Top 5 Highest Spends card with formatted summary table (`dal.get_top_vendors(5)`).
-           * Bottom 5 Lowest Spends card with formatted summary table (`dal.get_bottom_vendors(5)`).
-        3. **All Vendors Tab:**
-           * Header bar with toggle button (`id: vendor-toggle`) for `"Expenses Only"` vs `"Show All"`.
-           * Real-time search input (`ui.input`) with placeholder `"Search vendors..."`.
-           * Vendor directory table displaying columns: `Vendor`, `Total Spend`, `Txns`, `Category`, `Last Date`, sorted by highest expenditure first (`total_spend ASC`).
+* **Module Entrypoint:** `src/python/gui.py` via `build_gui(dal: SpendSightDAL)` and CLI command `spendsight gui`.
+* **Top Navigation Bar:**
+  * Application header with branding `"SpendSight: Vendor-Level Spending Intelligence"`.
+  * Top navigation tabs:
+    1. **`Analytics Hub`** (Default Home View).
+    2. **`Full Ledger`** (Auditing & Statement Verification).
+* **View 1: Analytics Hub:**
+  * **Top Ribbon (1/3 KPI Cards + 2/3 Smart Trend Graph Box):**
+    * **Left (1/3 Width):** Two stacked KPI metric cards:
+      * **Active Vendors Tracked** count card (`COUNT(DISTINCT vendor)`).
+      * **Median Spend Per Vendor** card (`statistics.median([spend for each vendor])`).
+    * **Right (2/3 Width):** Smart Median Spend Development Graph card (`dal.get_median_spend_trend()`):
+      * Interactive ECharts line graph tracking historical median spend across time.
+      * Adaptive granularity: dynamically scales from Month-over-Month (<=24 months), to Quarterly (>24 months, <=16 quarters), to Annual (>16 quarters) based on active statement timeline.
+      * Granularity badge indicator displaying active temporal aggregation mode.
+  * **Split Analytics Columns (~45% / ~55%):**
+    * **Left Analytics Column:**
+      * ECharts bar visualization of Top 10 Categories (`dal.get_top_categories(10)`).
+      * Category Drill-down widget: dropdown selector triggering top vendors for the selected category (`dal.get_top_vendors_by_category`). Clicking a vendor opens the transaction inspector drawer.
+    * **Right Analytics Column:**
+      * All Vendors Directory table (`dal.get_vendor_directory`): full-featured data table with live keyword search (`ui.input`) and `"Expenses Only"` toggle (`ui.button`). Clicking a row opens the transaction inspector drawer.
+      * Outlier Cards: Top 5 Highest Spends and Bottom 5 Lowest Spends summary tables.
+* **Contextual Slide-Out Drawer (`ui.right_drawer`):**
+  * When any vendor row or drill-down entry is clicked in the Analytics Hub, a drawer smoothly slides in from the right edge.
+  * Displays:
+    * Vendor name badge, primary category badge, and net spend badge.
+    * Chronological list of exact transactions for that vendor (`date`, `amount`, `category`, `raw_description`).
+    * Close button or click-outside dismissal without navigating away from the Analytics Hub.
+* **View 2: Dedicated Full Ledger Tab:**
+  * Consumes 100% horizontal canvas width.
+  * Header controls: `"Expenses Only"` vs `"Show All"` toggle button and search/filter.
+  * Data table displaying `Date`, `Vendor`, `Category`, `Amount` with native pagination and column sorting.
 
 ## 6.5 Vendor Canonicalization
 

@@ -135,11 +135,16 @@ If you prefer an interactive browser experience with richer charts and responsiv
 ```
 *(Alternatively: `uv run python -m src.python.gui`)*
 
-This starts a local web server at `http://localhost:8080`:
-- **Left Pane:** Paginated, sortable transaction ledger with an `Expenses Only` toggle.
-- **Right Pane (Categories):** Interactive ECharts category expenditure visualization and dropdown category drill-down table.
-- **Right Pane (Vendors):** High-level Top 5 Highest Spends and Bottom 5 Lowest Spends summary cards.
-- **Right Pane (All Vendors):** Searchable directory of all vendors with real-time text filtering and an `Expenses Only` toggle.
+This starts a local web server at `http://localhost:8080` featuring the **Hybrid Analytics-First Dashboard**:
+- **Analytics Hub (Default View):**
+  - **Top Ribbon:**
+    - **Vendor Intelligence KPI Cards (Left 1/3):** Instant visibility into **Active Vendors Tracked** and **Median Spend Per Vendor**.
+    - **Smart Median Spend Development Graph (Right 2/3):** Interactive trend chart tracking median spend over time. Adapts its temporal resolution automatically as data populates—shifting smoothly between Month-over-Month, Quarterly, and Annual aggregations.
+  - **Category Spending (Left):** Interactive ECharts category visualization and category drill-down selector.
+  - **Vendor Directory (Right):** Searchable vendor intelligence directory with live search filtering, expenditure ranking, and outlier highlights.
+  - **Contextual Slide-Out Drawer:** Click any vendor row, drill-down entry, or outlier badge to open the instant inspection drawer displaying all chronological transactions for that vendor without leaving analytics.
+- **Dedicated Full Ledger Tab:**
+  - Full-width chronological transaction ledger with `Expenses Only` toggle and column sorting, ideal for deep reconciliation.
 
 --- 
 

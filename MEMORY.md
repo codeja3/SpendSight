@@ -205,6 +205,50 @@ This document serves as the persistent memory bank for the SpendSight project. I
   * Contracts & Docs: Synchronized `PRD.md`, `SPEC.md`, `README.md`, and `MANUAL.md`.
 * *Quality Gate:* Full test suites pass (`pytest`, `go test ./...`), `ruff` and `mypy` clean.
 
+---
+
+## 18. Phase 18: Hybrid Analytics-First GUI Redesign (TDD)
+
+### Task 41: DAL Additions for Executive KPIs & Vendor Transactions (TDD) — DONE
+* *Status:* Implemented `get_executive_kpis()` and `get_transactions_by_vendor()` in `src/python/dal.py` along with `ExecutiveKPIs` Pydantic model. Unit tests in `tests/python/test_dal.py` all green.
+* *Query design:* Replaced generic total expenses / net cashflow metrics with vendor-centric metrics: Active Vendors Tracked count, Highest Spend Vendor & net spend, Average Spend Per Vendor, and Top Expense Category. `get_transactions_by_vendor` retrieves chronological transactions for granular inspection.
+
+### Task 42: Hybrid Analytics-First GUI Construction (TDD) — DONE
+* *Status:* Re-architected `src/python/gui.py` to center on the Analytics Hub, complemented by an instant slide-out inspection drawer and a dedicated Full Ledger tab. Unit tests in `tests/python/test_gui.py` all green.
+* *Design decisions:*
+  * **Top Navigation:** Two clean global tabs (`Analytics Hub` as default, `Full Ledger` for full-width statement auditing).
+  * **Vendor Intelligence KPI Cards:** 4 vendor-focused metric cards (Active Vendors Tracked, Highest Spend Vendor + amount, Avg Spend Per Vendor, Top Expense Category).
+  * **Split Analytics Canvas (~45% / ~55%):**
+    * Left: High-impact ECharts category visualization and category vendor drill-down.
+    * Right: Searchable vendor directory and Top 5 / Bottom 5 outlier highlights.
+  * **Contextual Slide-Out Drawer (`ui.right_drawer`):** Clicking any vendor in the directory, drill-down table, or outlier highlights smoothly opens the drawer with exact chronological transactions, preserving context without tab switching.
+* *Quality Gate:* Full test suite (61 pytest tests, 3 Go test packages) passed, `ruff` and `mypy` clean.
+
+### Task 43: Vendor Intelligence KPI Simplification & Branding Header — DONE
+* *Status:* Streamlined KPI metrics to strictly 2 cards focused entirely on vendor footprint and spend dispersion:
+  1. `Active Vendors Tracked` (`COUNT(DISTINCT vendor)`)
+  2. `Median Spend Per Vendor` (`statistics.median([spend for each vendor])`)
+* *Design Decisions:*
+  - Removed "Top Expense Category", "Highest Spend Vendor", and "Avg Spend Per Vendor" to prevent metric bloat and avoid outlier distortion inherent to mean spend across disparate vendor types.
+  - Updated `ExecutiveKPIs` model in `dal.py` to contain only `active_vendors_count` and `median_spend_per_vendor`.
+  - Consolidated top-left navigation logo/title into a unified label: `"SpendSight: Vendor-Level Spending Intelligence"`.
+* *Quality Gate:* Full test suite (61 pytest tests, 3 Go test packages) passed, `ruff` and `mypy` clean.
+
+### Task 44: Smart Adaptive Median Spend Development Graph (TDD) — DONE
+* *Status:* Added an adaptive temporal line chart for median spend over time occupying 2/3 of the top ribbon.
+* *Design Decisions:*
+  - **Top Ribbon Proportion:** 1/3 left holds the 2 KPI cards (`Active Vendors Tracked` and `Median Spend Per Vendor`) stacked vertically; 2/3 right holds the smart `Median Spend Development` chart card.
+  - **Smart Adaptive Resolution:**
+    - If total span across active statement dates <= 24 months, groups by month (`YYYY-MM`) with `Month-over-Month` badge.
+    - If > 24 months and <= 16 quarters, groups by quarter (`YYYY-Q1..Q4`) with `Quarterly Trend` badge.
+    - If > 16 quarters, groups by calendar year (`YYYY`) with `Annual Trend` badge.
+  - **DAL Implementation:** Added `MedianSpendPoint`, `MedianSpendTrend`, and `get_median_spend_trend()` to `src/python/dal.py`.
+  - **Visualization:** Smooth purple-themed ECharts line graph with filled area gradient and dynamic axis/tooltip formatting.
+* *Quality Gate:* Full test suite (63 pytest tests, 3 Go packages) passed, `ruff` and `mypy` clean.
+
+
+
+
 
 
 
