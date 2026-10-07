@@ -1,5 +1,5 @@
-# 📖 SpendSight User Manual: Installation & Quick Start
-Welcome to SpendSight! Because this application relies on a multi-language architecture (Go + Python) and a local AI model, the initial setup requires a few specific steps. Once configured, the daily operation is entirely seamless and managed through a single command-line interface.
+# 📖 SpendSight User Manual: Vendor-Level Spending Intelligence
+Welcome to SpendSight (Vendor-Level Spending Intelligence)! Because this application relies on a multi-language architecture (Go + Python) and a local AI model, the initial setup requires a few specific steps. Once configured, the daily operation is entirely seamless and managed through a single command-line interface.
 
 ---
 

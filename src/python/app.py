@@ -19,7 +19,7 @@ from src.python.dal import SpendSightDAL
 class SpendSightApp(App):
     """The main Textual dashboard for SpendSight."""
     
-    TITLE = "SpendSight Analytics"
+    TITLE = "SpendSight: Vendor-Level Spending Intelligence"
     
     CSS = """
     #ledger-container {

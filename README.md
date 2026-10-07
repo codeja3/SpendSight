@@ -1,8 +1,9 @@
 # SpendSight 👁️💰
+**Vendor-Level Spending Intelligence**
 
-**A Privacy-First, Local LLM-Powered Personal Finance CLI**
+*A Privacy-First, Local LLM-Powered Personal Finance CLI*
 
-SpendSight is a fully local, command-line application that ingests bank and credit card statements, intelligently normalizes vendor names using local Small Language Models (SLMs), and visualizes your spending habits through a rich interactive terminal dashboard. 
+SpendSight is a fully local, command-line application that ingests bank and credit card statements, intelligently normalizes vendor names using local Small Language Models (SLMs), and visualizes your spending habits through a rich interactive terminal dashboard or local web UI with a core focus on vendor-level intelligence. 
 
 Built with an absolute commitment to data privacy, SpendSight operates completely offline. Your financial data never leaves your machine, and source statement files are securely and permanently deleted the moment they are successfully committed to the local database.
 
@@ -99,6 +100,9 @@ CLI-First Context: Graphical IDEs were entirely eschewed. The entire pipeline, t
 ✅ Phase 16: NiceGUI Dual Frontend Rendering (TDD)
 - Dual rendering architecture supporting both Terminal TUI (`spendsight dashboard`) and Browser Web UI (`spendsight gui`).
 - Interactive NiceGUI frontend featuring responsive transactions table, ECharts category visualization, category drill-down, and searchable vendor directory.
+
+✅ Phase 17: Vendor-Level Spending Intelligence Alignment
+- Emphasized vendor-level tracking across CLI banners, Textual/NiceGUI application headers, and contract documentation.
 
 --- 
 

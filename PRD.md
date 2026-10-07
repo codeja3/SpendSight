@@ -1,7 +1,7 @@
-# Project Requirements Document (PRD): SpendSight
+# Project Requirements Document (PRD): SpendSight — Vendor-Level Spending Intelligence
 
 ## 1. Project Overview
-SpendSight is a locally hosted, privacy-first personal finance application designed to ingest bank and credit card statements, categorize transactions at the vendor level, and visualize spending habits. The system emphasizes data privacy by operating completely offline and permanently deleting source statement files immediately after ingestion.
+SpendSight (Vendor-Level Spending Intelligence) is a locally hosted, privacy-first personal finance application designed to ingest bank and credit card statements, categorize transactions at the vendor level, and visualize spending habits with vendor-centric insights. The system emphasizes data privacy by operating completely offline and permanently deleting source statement files immediately after ingestion.
 
 ## 2. Core Requirements & Scope
 * **Strictly Local Execution:** The entire stack must run locally. External APIs for data processing are strictly prohibited to ensure maximum data privacy.

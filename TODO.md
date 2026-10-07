@@ -268,6 +268,18 @@ Implement `src/python/gui.py` consuming `SpendSightDAL` with full parity to the 
 - [x] **T2 - Impl GUI Module (Red->Green):** Build `src/python/gui.py` with `build_gui(dal: SpendSightDAL)` creating the ledger grid, toggle buttons, ECharts category visualization, category drill-down selector, top/bottom vendor summaries, and searchable vendor directory.
 - [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`, `mypy src`), and update documentation (`MEMORY.md`, `MANUAL.md`, `README.md`).
 
+---
+
+## Phase 17: Vendor-Level Spending Intelligence Tagline Alignment
+
+### Task 40: Tagline Brand Alignment across UI & Documentation
+Emphasize vendor-level tracking by adopting the "Vendor-Level Spending Intelligence" tagline across CLI banners, UI titles, and documentation.
+- [x] **T1 - Documentation Contracts:** Update title and overview in `PRD.md` and `SPEC.md`.
+- [x] **T2 - UI Titles & CLI Banners:** Update CLI banner in `main.go`, Textual title in `src/python/app.py`, and NiceGUI header in `src/python/gui.py`.
+- [x] **T3 - Manual & Readme:** Synchronize `README.md`, `MANUAL.md`, and record decisions in `MEMORY.md`.
+- [x] **T4 - Quality Gate & Verification:** Run full test suite (`pytest`, `go test ./...`), rebuild Go binary, and verify CLI output.
+
+
 
 
 
