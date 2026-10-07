@@ -234,6 +234,19 @@ This document serves as the persistent memory bank for the SpendSight project. I
   - Consolidated top-left navigation logo/title into a unified label: `"SpendSight: Vendor-Level Spending Intelligence"`.
 * *Quality Gate:* Full test suite (61 pytest tests, 3 Go test packages) passed, `ruff` and `mypy` clean.
 
+### Task 44: Smart Adaptive Median Spend Development Graph (TDD) — DONE
+* *Status:* Added an adaptive temporal line chart for median spend over time occupying 2/3 of the top ribbon.
+* *Design Decisions:*
+  - **Top Ribbon Proportion:** 1/3 left holds the 2 KPI cards (`Active Vendors Tracked` and `Median Spend Per Vendor`) stacked vertically; 2/3 right holds the smart `Median Spend Development` chart card.
+  - **Smart Adaptive Resolution:**
+    - If total span across active statement dates <= 24 months, groups by month (`YYYY-MM`) with `Month-over-Month` badge.
+    - If > 24 months and <= 16 quarters, groups by quarter (`YYYY-Q1..Q4`) with `Quarterly Trend` badge.
+    - If > 16 quarters, groups by calendar year (`YYYY`) with `Annual Trend` badge.
+  - **DAL Implementation:** Added `MedianSpendPoint`, `MedianSpendTrend`, and `get_median_spend_trend()` to `src/python/dal.py`.
+  - **Visualization:** Smooth purple-themed ECharts line graph with filled area gradient and dynamic axis/tooltip formatting.
+* *Quality Gate:* Full test suite (63 pytest tests, 3 Go packages) passed, `ruff` and `mypy` clean.
+
+
 
 
 

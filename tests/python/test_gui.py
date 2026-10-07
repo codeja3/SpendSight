@@ -6,6 +6,8 @@ from src.python.dal import (
     AggregateRow,
     ExecutiveKPIs,
     LedgerRow,
+    MedianSpendPoint,
+    MedianSpendTrend,
     SpendSightDAL,
     VendorDirectoryRow,
 )
@@ -18,6 +20,13 @@ def mock_dal() -> Mock:
     dal.get_executive_kpis.return_value = ExecutiveKPIs(
         active_vendors_count=2,
         median_spend_per_vendor=-105.00,
+    )
+    dal.get_median_spend_trend.return_value = MedianSpendTrend(
+        granularity="month",
+        points=[
+            MedianSpendPoint(period="2026-03", median_spend=-95.0, vendor_count=3),
+            MedianSpendPoint(period="2026-04", median_spend=-105.0, vendor_count=2),
+        ],
     )
     dal.get_ledger.return_value = [
         LedgerRow(date="2026-04-12", vendor="Coffee Shop", category="Dining", amount=-5.50),
@@ -66,11 +75,15 @@ def test_build_gui_renders_main_containers_and_calls_dal(mock_dal: Mock):
     
     # Assert initial DAL queries executed
     mock_dal.get_executive_kpis.assert_called_once()
+    mock_dal.get_median_spend_trend.assert_called_once()
     mock_dal.get_ledger.assert_called_once_with(limit=None, expenses_only=False)
     mock_dal.get_top_vendors.assert_called_once_with(limit_n=5)
     mock_dal.get_bottom_vendors.assert_called_once_with(limit_n=5)
     mock_dal.get_top_categories.assert_called_once_with(limit_n=10)
     mock_dal.get_vendor_directory.assert_called_once_with(search=None, expenses_only=False)
+    assert gui.median_trend_chart is not None
+    assert gui.trend_granularity_label is not None
+    assert "Month-over-Month" in gui.trend_granularity_label.text
 
 
 def test_open_vendor_inspection_drawer(mock_dal: Mock):

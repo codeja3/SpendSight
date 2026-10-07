@@ -301,6 +301,12 @@ Streamline KPI cards down to strictly 2 cards (Active Vendors Tracked, Median Sp
 - [x] **T2 - Impl DAL & GUI (Red->Green):** Update `ExecutiveKPIs` model and `get_executive_kpis()` in `src/python/dal.py` with `statistics.median()`. Update `gui.py` branding header and KPI card row to strictly 2 cards.
 - [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`), and update documentation (`SPEC.md`, `MANUAL.md`, `MEMORY.md`, `TODO.md`).
 
+### Task 44: Smart Adaptive Median Spend Development Graph (TDD)
+Add adaptive temporal line graph for median spend over time occupying 2/3 of top ribbon.
+- [x] **T1 - Test DAL & GUI (Red):** Add unit tests in `tests/python/test_dal.py` asserting adaptive granularity logic (month, quarter, year) and in `tests/python/test_gui.py` asserting trend chart and badge rendering.
+- [x] **T2 - Impl DAL & GUI (Red->Green):** Add `MedianSpendPoint`, `MedianSpendTrend`, and `get_median_spend_trend()` in `src/python/dal.py`. Re-proportion top ribbon in `gui.py` to 1/3 (vertical KPI cards) and 2/3 (interactive trend line chart with adaptive badge).
+- [x] **T3 - Refactor & Quality Gate:** Verify full test suite passes (`pytest`, `go test ./...`), run linters (`ruff check .`), and update documentation (`SPEC.md`, `MANUAL.md`, `MEMORY.md`, `TODO.md`).
+
 
 
 

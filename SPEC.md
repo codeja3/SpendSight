@@ -250,9 +250,14 @@ To prioritize vendor statistics and spend intelligence over raw ledger rows, `sr
     1. **`Analytics Hub`** (Default Home View).
     2. **`Full Ledger`** (Auditing & Statement Verification).
 * **View 1: Analytics Hub:**
-  * **Vendor Intelligence KPI Cards Row (strictly 2 cards):**
-    * **Active Vendors Tracked** count card (`COUNT(DISTINCT vendor)`).
-    * **Median Spend Per Vendor** card (`statistics.median([spend for each vendor])`).
+  * **Top Ribbon (1/3 KPI Cards + 2/3 Smart Trend Graph Box):**
+    * **Left (1/3 Width):** Two stacked KPI metric cards:
+      * **Active Vendors Tracked** count card (`COUNT(DISTINCT vendor)`).
+      * **Median Spend Per Vendor** card (`statistics.median([spend for each vendor])`).
+    * **Right (2/3 Width):** Smart Median Spend Development Graph card (`dal.get_median_spend_trend()`):
+      * Interactive ECharts line graph tracking historical median spend across time.
+      * Adaptive granularity: dynamically scales from Month-over-Month (<=24 months), to Quarterly (>24 months, <=16 quarters), to Annual (>16 quarters) based on active statement timeline.
+      * Granularity badge indicator displaying active temporal aggregation mode.
   * **Split Analytics Columns (~45% / ~55%):**
     * **Left Analytics Column:**
       * ECharts bar visualization of Top 10 Categories (`dal.get_top_categories(10)`).

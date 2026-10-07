@@ -256,3 +256,74 @@ def test_get_transactions_by_vendor(mock_db):
     assert txns[0].date == "2026-04-12"
     assert txns[1].amount == -50.0
     assert txns[1].date == "2026-04-10"
+
+
+def test_get_median_spend_trend_monthly_adaptive(mock_db):
+    dal = SpendSightDAL(mock_db)
+    trend = dal.get_median_spend_trend()
+
+    # In mock_db, all transactions fall in April 2026 (1 month total: < 24 months -> monthly)
+    assert trend.granularity == "month"
+    assert len(trend.points) == 1
+    assert trend.points[0].period == "2026-04"
+    assert trend.points[0].median_spend == -105.0
+
+
+def test_get_median_spend_trend_adaptive_granularity(tmp_path):
+    # Test quarterly (>24 months) and annual (>16 quarters) adaptation
+    db_path = tmp_path / "trend_test.db"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_date TEXT NOT NULL,
+        amount REAL NOT NULL,
+        raw_description TEXT NOT NULL,
+        vendor TEXT NOT NULL,
+        category TEXT NOT NULL,
+        source_format TEXT NOT NULL,
+        ingested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    """)
+
+    # Create 30 consecutive monthly records across 2023, 2024, 2025
+    # Distinct months = 30 (> 24 months, <= 16 quarters -> quarterly)
+    records = []
+    for year in [2023, 2024]:
+        for month in range(1, 13):
+            records.append((f"{year}-{month:02d}-15", -100.0, "DESC", "VendorA", "Cat", "csv"))
+    for month in range(1, 7):
+        records.append((f"2025-{month:02d}-15", -100.0, "DESC", "VendorA", "Cat", "csv"))
+
+    cursor.executemany("""
+        INSERT INTO transactions (transaction_date, amount, raw_description, vendor, category, source_format)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, records)
+    conn.commit()
+    conn.close()
+
+    dal = SpendSightDAL(str(db_path))
+    quarterly_trend = dal.get_median_spend_trend()
+    assert quarterly_trend.granularity == "quarter"
+    assert len(quarterly_trend.points) > 0
+    assert "Q" in quarterly_trend.points[0].period
+
+    # Now add data spanning 5 years (20 quarters, > 16 quarters -> annual)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    more_records = []
+    for year in [2020, 2021]:
+        for month in range(1, 13):
+            more_records.append((f"{year}-{month:02d}-15", -200.0, "DESC", "VendorB", "Cat", "csv"))
+    cursor.executemany("""
+        INSERT INTO transactions (transaction_date, amount, raw_description, vendor, category, source_format)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, more_records)
+    conn.commit()
+    conn.close()
+
+    annual_trend = dal.get_median_spend_trend()
+    assert annual_trend.granularity == "year"
+    assert len(annual_trend.points) == 5  # 2020, 2021, 2023, 2024, 2025 (5 active years)
+    assert {p.period for p in annual_trend.points} == {"2020", "2021", "2023", "2024", "2025"}

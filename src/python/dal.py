@@ -26,6 +26,15 @@ class ExecutiveKPIs(BaseModel):
     active_vendors_count: int
     median_spend_per_vendor: float
 
+class MedianSpendPoint(BaseModel):
+    period: str
+    median_spend: float
+    vendor_count: int
+
+class MedianSpendTrend(BaseModel):
+    granularity: str  # "month", "quarter", or "year"
+    points: list[MedianSpendPoint]
+
 class SpendSightDAL:
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -185,3 +194,78 @@ class SpendSightDAL:
         """
         rows = self._execute_query(query, (vendor,))
         return [LedgerRow(**dict(row)) for row in rows]
+
+    def get_median_spend_trend(self) -> MedianSpendTrend:
+        """Calculates historical median spend per vendor over time, adapting granularity.
+        
+        Granularity logic:
+        - If total span across active periods is <= 24 months, group by month (YYYY-MM).
+        - If > 24 months and <= 16 quarters, group by quarter (YYYY-Q1..Q4).
+        - Otherwise, group by year (YYYY).
+        """
+        # First query distinct months to inspect temporal span
+        month_query = """
+            SELECT DISTINCT SUBSTR(transaction_date, 1, 7) as ym
+            FROM transactions
+            WHERE transaction_date IS NOT NULL AND transaction_date != ''
+              AND vendor IS NOT NULL AND vendor != ''
+            ORDER BY ym ASC
+        """
+        month_rows = self._execute_query(month_query)
+        total_months = len(month_rows)
+
+        if total_months == 0:
+            return MedianSpendTrend(granularity="month", points=[])
+
+        # Decide granularity
+        if total_months <= 24:
+            granularity = "month"
+            # period expression: SUBSTR(transaction_date, 1, 7)
+            period_expr = "SUBSTR(transaction_date, 1, 7)"
+        else:
+            # Check number of quarters
+            quarters_count = len({
+                f"{r['ym'][:4]}-Q{(int(r['ym'][5:7]) - 1) // 3 + 1}"
+                for r in month_rows
+            })
+            if quarters_count <= 16:
+                granularity = "quarter"
+                # SQLite quarter calculation:
+                # YYYY || '-Q' || ((CAST(SUBSTR(transaction_date, 6, 2) AS INTEGER) - 1) / 3 + 1)
+                period_expr = "SUBSTR(transaction_date, 1, 4) || '-Q' || ((CAST(SUBSTR(transaction_date, 6, 2) AS INTEGER) - 1) / 3 + 1)"
+            else:
+                granularity = "year"
+                period_expr = "SUBSTR(transaction_date, 1, 4)"
+
+        query = f"""
+            SELECT 
+                {period_expr} as period,
+                vendor,
+                SUM(amount) as vendor_spend
+            FROM transactions
+            WHERE transaction_date IS NOT NULL AND transaction_date != ''
+              AND vendor IS NOT NULL AND vendor != ''
+            GROUP BY period, vendor
+            ORDER BY period ASC
+        """
+        rows = self._execute_query(query)
+
+        # Group vendor_spends by period and calculate median
+        from collections import defaultdict
+        period_spends: dict[str, list[float]] = defaultdict(list)
+        for r in rows:
+            period_spends[r["period"]].append(float(r["vendor_spend"]))
+
+        points: list[MedianSpendPoint] = []
+        for period in sorted(period_spends.keys()):
+            spends = period_spends[period]
+            med = float(statistics.median(spends))
+            points.append(
+                MedianSpendPoint(
+                    period=period,
+                    median_spend=med,
+                    vendor_count=len(spends),
+                )
+            )
+
+        return MedianSpendTrend(granularity=granularity, points=points)

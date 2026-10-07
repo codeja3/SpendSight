@@ -19,6 +19,8 @@ class SpendSightGUI:
         # Component handles
         self.kpi_vendors_label: ui.label | None = None
         self.kpi_median_spend_label: ui.label | None = None
+        self.median_trend_chart: ui.echart | None = None
+        self.trend_granularity_label: ui.label | None = None
 
         self.category_chart: ui.echart | None = None
         self.category_select: ui.select | None = None
@@ -84,15 +86,42 @@ class SpendSightGUI:
             # TAB 1: Analytics Hub (Default Home View)
             # ==========================================
             with ui.tab_panel(tab_analytics).classes("p-0 space-y-4"):
-                # 1. Vendor Intelligence KPI Cards Row (strictly 2 cards)
+                # 1. Top Ribbon: 1/3 KPI Cards (stacked) + 2/3 Smart Trend Graph Box
                 with ui.row().classes("w-full gap-4 items-stretch"):
-                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-blue-500"):
-                        ui.label("Active Vendors Tracked").classes("text-xs font-semibold text-slate-500 uppercase")
-                        self.kpi_vendors_label = ui.label("0").classes("text-2xl font-bold text-slate-800")
+                    # 1/3 Left: 2 KPI metric boxes stacked vertically
+                    with ui.column().classes("w-full md:w-[32%] gap-4 justify-between"):
+                        with ui.card().classes("w-full p-4 bg-white shadow-sm border-l-4 border-blue-500 flex-1"):
+                            ui.label("Active Vendors Tracked").classes("text-xs font-semibold text-slate-500 uppercase")
+                            self.kpi_vendors_label = ui.label("0").classes("text-2xl font-bold text-slate-800")
 
-                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-purple-500"):
-                        ui.label("Median Spend Per Vendor").classes("text-xs font-semibold text-slate-500 uppercase")
-                        self.kpi_median_spend_label = ui.label("$0.00").classes("text-2xl font-bold text-slate-800")
+                        with ui.card().classes("w-full p-4 bg-white shadow-sm border-l-4 border-purple-500 flex-1"):
+                            ui.label("Median Spend Per Vendor").classes("text-xs font-semibold text-slate-500 uppercase")
+                            self.kpi_median_spend_label = ui.label("$0.00").classes("text-2xl font-bold text-slate-800")
+
+                    # 2/3 Right: Smart Median Spend Trend Graph box
+                    with ui.card().classes("w-full md:w-[66%] flex-1 p-4 bg-white shadow-sm"):
+                        with ui.row().classes("w-full items-center justify-between border-b pb-1 mb-1"):
+                            with ui.row().classes("items-center gap-2"):
+                                ui.icon("show_chart", size="xs").classes("text-purple-600")
+                                ui.label("Median Spend Development").classes("font-bold text-slate-800 text-sm")
+                            self.trend_granularity_label = ui.label("Month-over-Month").classes("text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded font-medium")
+
+                        self.median_trend_chart = ui.echart({
+                            "tooltip": {"trigger": "axis", "formatter": "{b}: ${c}"},
+                            "grid": {"left": "10%", "right": "5%", "top": "12%", "bottom": "20%"},
+                            "xAxis": {"type": "category", "data": [], "axisLabel": {"fontSize": 10}},
+                            "yAxis": {"type": "value", "axisLabel": {"formatter": "${value}"}},
+                            "series": [{
+                                "data": [],
+                                "type": "line",
+                                "smooth": True,
+                                "symbol": "circle",
+                                "symbolSize": 6,
+                                "lineStyle": {"color": "#8b5cf6", "width": 3},
+                                "itemStyle": {"color": "#7c3aed"},
+                                "areaStyle": {"color": "rgba(139, 92, 246, 0.15)"},
+                            }],
+                        }).classes("w-full h-32")
 
                 # 2. Main Analytics Columns (~45% Left / ~55% Right)
                 with ui.row().classes("w-full gap-4 items-start no-wrap"):
@@ -213,6 +242,7 @@ class SpendSightGUI:
 
         # Initial data loading
         self.load_kpis()
+        self.load_median_trend()
         self.load_categories()
         self.load_vendor_directory()
         self.load_ledger()
@@ -223,6 +253,27 @@ class SpendSightGUI:
             self.kpi_vendors_label.text = str(kpis.active_vendors_count)
         if self.kpi_median_spend_label is not None:
             self.kpi_median_spend_label.text = self.format_currency(kpis.median_spend_per_vendor)
+
+    def load_median_trend(self) -> None:
+        trend = self.dal.get_median_spend_trend()
+        
+        # Format granularity badge
+        granularity_display = {
+            "month": "Month-over-Month",
+            "quarter": "Quarterly Trend",
+            "year": "Annual Trend",
+        }.get(trend.granularity, "Trend")
+        
+        if self.trend_granularity_label is not None:
+            self.trend_granularity_label.text = granularity_display
+
+        periods = [p.period for p in trend.points]
+        medians = [round(abs(p.median_spend), 2) for p in trend.points]
+
+        if self.median_trend_chart is not None:
+            self.median_trend_chart.options["xAxis"]["data"] = periods
+            self.median_trend_chart.options["series"][0]["data"] = medians
+            self.median_trend_chart.update()
 
     def load_categories(self) -> None:
         categories = self.dal.get_top_categories(limit_n=10)
