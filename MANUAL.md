@@ -137,7 +137,7 @@ If you prefer an interactive browser experience with richer charts and responsiv
 
 This starts a local web server at `http://localhost:8080` featuring the **Hybrid Analytics-First Dashboard**:
 - **Analytics Hub (Default View):**
-  - **Executive KPI Cards:** Instant visibility into Total Expenses, Net Cashflow, Active Vendors Count, and Top Expense Vendor.
+  - **Vendor Intelligence KPI Cards:** Instant visibility into Active Vendors Tracked, Highest Spend Vendor, Average Spend Per Vendor, and Top Expense Category.
   - **Category Spending (Left):** Interactive ECharts category visualization and category drill-down selector.
   - **Vendor Directory (Right):** Searchable vendor intelligence directory with live search filtering, expenditure ranking, and outlier highlights.
   - **Contextual Slide-Out Drawer:** Click any vendor row, drill-down entry, or outlier badge to open the instant inspection drawer displaying all chronological transactions for that vendor without leaving analytics.

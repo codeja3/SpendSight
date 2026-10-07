@@ -250,11 +250,11 @@ To prioritize vendor statistics and spend intelligence over raw ledger rows, `sr
     1. **`Analytics Hub`** (Default Home View).
     2. **`Full Ledger`** (Auditing & Statement Verification).
 * **View 1: Analytics Hub:**
-  * **Executive KPI Cards Row:**
-    * Net Spend metric card (`SUM(amount)`).
-    * Top Category metric card.
-    * Active Vendors count card (`COUNT(DISTINCT vendor)`).
-    * Top Spending Vendor metric card.
+  * **Vendor Intelligence KPI Cards Row:**
+    * Active Vendors Tracked count card (`COUNT(DISTINCT vendor)`).
+    * Highest Spend Vendor & spend card.
+    * Average Spend Per Vendor card (`SUM(amount < 0) / COUNT(DISTINCT vendor)`).
+    * Top Expense Category card.
   * **Split Analytics Columns (~45% / ~55%):**
     * **Left Analytics Column:**
       * ECharts bar visualization of Top 10 Categories (`dal.get_top_categories(10)`).

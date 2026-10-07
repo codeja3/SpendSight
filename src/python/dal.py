@@ -22,11 +22,11 @@ class VendorDirectoryRow(BaseModel):
     last_active_date: str
 
 class ExecutiveKPIs(BaseModel):
-    total_expenses: float
-    net_income: float
     active_vendors_count: int
-    top_expense_category: str | None
     top_expense_vendor: str | None
+    top_expense_vendor_spend: float
+    top_expense_category: str | None
+    average_spend_per_vendor: float
 
 class SpendSightDAL:
     def __init__(self, db_path: str):
@@ -156,31 +156,33 @@ class SpendSightDAL:
         return [VendorDirectoryRow(**dict(row)) for row in rows]
 
     def get_executive_kpis(self) -> ExecutiveKPIs:
-        """Computes top-level KPI metrics: total expenses, net income, active vendor count, top category, and top vendor."""
-        # 1. Total expenses (amount < 0) and Net income (sum of all amounts)
+        """Computes vendor-centric KPI metrics: active vendors count, top expense vendor & spend, top category, and average spend per vendor."""
         totals_query = """
             SELECT 
                 COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0.0) as total_expenses,
-                COALESCE(SUM(amount), 0.0) as net_income,
                 COUNT(DISTINCT CASE WHEN vendor IS NOT NULL AND vendor != '' THEN vendor END) as active_vendors_count
             FROM transactions
         """
         totals_row = self._execute_query(totals_query)[0]
+        total_expenses = float(totals_row["total_expenses"])
+        active_count = int(totals_row["active_vendors_count"])
+        avg_spend = (total_expenses / active_count) if active_count > 0 else 0.0
 
-        # 2. Top category (most negative sum)
+        # Top category (most negative sum)
         top_cats = self.get_top_categories(limit_n=1)
         top_category = top_cats[0].name if top_cats else None
 
-        # 3. Top vendor (most negative sum)
+        # Top vendor (most negative sum)
         top_vens = self.get_top_vendors(limit_n=1)
         top_vendor = top_vens[0].name if top_vens else None
+        top_vendor_spend = float(top_vens[0].total_spend) if top_vens else 0.0
 
         return ExecutiveKPIs(
-            total_expenses=float(totals_row["total_expenses"]),
-            net_income=float(totals_row["net_income"]),
-            active_vendors_count=int(totals_row["active_vendors_count"]),
-            top_expense_category=top_category,
+            active_vendors_count=active_count,
             top_expense_vendor=top_vendor,
+            top_expense_vendor_spend=top_vendor_spend,
+            top_expense_category=top_category,
+            average_spend_per_vendor=avg_spend,
         )
 
     def get_transactions_by_vendor(self, vendor: str) -> list[LedgerRow]:

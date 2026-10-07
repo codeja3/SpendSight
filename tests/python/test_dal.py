@@ -238,16 +238,16 @@ def test_get_executive_kpis(mock_db):
     # Coffee Shop: -50.0, -10.0 (Dining, sum -60.0)
     # Landlord: -2000.0 (Housing)
     # Employer: 5000.0 (Income)
-    # Total net spend = -150 - 60 - 2000 + 5000 = 2790.0
     # Total expenses only = -2210.0
-    # Distinct active vendors = 4 (or 3 expense vendors)
+    # Distinct active vendors = 4 (Amazon, Coffee Shop, Landlord, Employer)
+    # Average spend per vendor = -2210.0 / 4 = -552.50
     # Top expense vendor = Landlord (-2000.0)
     # Top expense category = Housing (-2000.0)
-    assert kpis.total_expenses == -2210.0
-    assert kpis.net_income == 2790.0
     assert kpis.active_vendors_count == 4
-    assert kpis.top_expense_category == "Housing"
     assert kpis.top_expense_vendor == "Landlord"
+    assert kpis.top_expense_vendor_spend == -2000.0
+    assert kpis.top_expense_category == "Housing"
+    assert kpis.average_spend_per_vendor == -552.50
 
 
 def test_get_transactions_by_vendor(mock_db):

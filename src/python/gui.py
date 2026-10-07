@@ -17,10 +17,11 @@ class SpendSightGUI:
         self.selected_vendor_for_inspection: str | None = None
 
         # Component handles
-        self.kpi_expenses_label: ui.label | None = None
-        self.kpi_net_label: ui.label | None = None
         self.kpi_vendors_label: ui.label | None = None
         self.kpi_top_vendor_label: ui.label | None = None
+        self.kpi_top_spend_label: ui.label | None = None
+        self.kpi_avg_spend_label: ui.label | None = None
+        self.kpi_top_category_label: ui.label | None = None
 
         self.category_chart: ui.echart | None = None
         self.category_select: ui.select | None = None
@@ -87,23 +88,24 @@ class SpendSightGUI:
             # TAB 1: Analytics Hub (Default Home View)
             # ==========================================
             with ui.tab_panel(tab_analytics).classes("p-0 space-y-4"):
-                # 1. Executive KPI Cards Row
+                # 1. Vendor Intelligence KPI Cards Row
                 with ui.row().classes("w-full gap-4 items-stretch"):
-                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-red-500"):
-                        ui.label("Total Expenses").classes("text-xs font-semibold text-slate-500 uppercase")
-                        self.kpi_expenses_label = ui.label("$0.00").classes("text-2xl font-bold text-slate-800")
-
-                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-emerald-500"):
-                        ui.label("Net Income / Cashflow").classes("text-xs font-semibold text-slate-500 uppercase")
-                        self.kpi_net_label = ui.label("$0.00").classes("text-2xl font-bold text-slate-800")
-
                     with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-blue-500"):
-                        ui.label("Active Vendors").classes("text-xs font-semibold text-slate-500 uppercase")
+                        ui.label("Active Vendors Tracked").classes("text-xs font-semibold text-slate-500 uppercase")
                         self.kpi_vendors_label = ui.label("0").classes("text-2xl font-bold text-slate-800")
 
-                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-amber-500"):
-                        ui.label("Top Expense Vendor").classes("text-xs font-semibold text-slate-500 uppercase")
+                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-red-500"):
+                        ui.label("Highest Spend Vendor").classes("text-xs font-semibold text-slate-500 uppercase")
                         self.kpi_top_vendor_label = ui.label("—").classes("text-xl font-bold text-slate-800 truncate")
+                        self.kpi_top_spend_label = ui.label("").classes("text-xs font-medium text-red-600")
+
+                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-purple-500"):
+                        ui.label("Avg Spend Per Vendor").classes("text-xs font-semibold text-slate-500 uppercase")
+                        self.kpi_avg_spend_label = ui.label("$0.00").classes("text-2xl font-bold text-slate-800")
+
+                    with ui.card().classes("flex-1 p-4 bg-white shadow-sm border-l-4 border-amber-500"):
+                        ui.label("Top Expense Category").classes("text-xs font-semibold text-slate-500 uppercase")
+                        self.kpi_top_category_label = ui.label("—").classes("text-xl font-bold text-slate-800 truncate")
 
                 # 2. Main Analytics Columns (~45% Left / ~55% Right)
                 with ui.row().classes("w-full gap-4 items-start no-wrap"):
@@ -230,14 +232,16 @@ class SpendSightGUI:
 
     def load_kpis(self) -> None:
         kpis = self.dal.get_executive_kpis()
-        if self.kpi_expenses_label is not None:
-            self.kpi_expenses_label.text = self.format_currency(kpis.total_expenses)
-        if self.kpi_net_label is not None:
-            self.kpi_net_label.text = self.format_currency(kpis.net_income)
         if self.kpi_vendors_label is not None:
             self.kpi_vendors_label.text = str(kpis.active_vendors_count)
         if self.kpi_top_vendor_label is not None:
             self.kpi_top_vendor_label.text = kpis.top_expense_vendor or "—"
+        if self.kpi_top_spend_label is not None and kpis.top_expense_vendor:
+            self.kpi_top_spend_label.text = self.format_currency(kpis.top_expense_vendor_spend)
+        if self.kpi_avg_spend_label is not None:
+            self.kpi_avg_spend_label.text = self.format_currency(kpis.average_spend_per_vendor)
+        if self.kpi_top_category_label is not None:
+            self.kpi_top_category_label.text = kpis.top_expense_category or "—"
 
     def load_categories(self) -> None:
         categories = self.dal.get_top_categories(limit_n=10)
