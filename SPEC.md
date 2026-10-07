@@ -1,4 +1,4 @@
-# SPEC.md: SpendSight Technical Specifications
+# SPEC.md: SpendSight — Vendor-Level Spending Intelligence Technical Specifications
 
 This document defines the strict data schemas, API contracts, and boundary definitions for the SpendSight application. Any changes to data structures must be updated here and approved before implementation code is altered.
 

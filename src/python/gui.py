@@ -38,7 +38,7 @@ class SpendSightGUI:
             with ui.row().classes("items-center gap-2"):
                 ui.icon("insights", size="md").classes("text-blue-400")
                 ui.label("SpendSight Analytics").classes("text-xl font-bold tracking-tight")
-            ui.label("Privacy-First Local Finance").classes("text-sm text-slate-400")
+            ui.label("Vendor-Level Spending Intelligence").classes("text-sm text-slate-400")
 
         # Main Split Content
         with ui.row().classes("w-full p-4 gap-4 no-wrap items-stretch"):

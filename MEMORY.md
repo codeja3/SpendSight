@@ -192,6 +192,20 @@ This document serves as the persistent memory bank for the SpendSight project. I
     3. All Vendors: Vendor directory table with real-time text search and `"Expenses Only"` toggle.
 * *Quality Gate:* All 58 pytest tests and 3 Go test packages passed. Linting (`ruff`) and type-checking (`mypy`) clean.
 
+---
+
+## 17. Phase 17: Vendor-Level Spending Intelligence Tagline Alignment
+
+### Task 40: Tagline Brand Alignment across UI & Documentation — DONE
+* *Status:* Adopted the tagline approach to emphasize vendor-level tracking without breaking existing module names, Go binary names (`./spendsight`), or database paths.
+* *Updates Applied:*
+  * `main.go`: Updated CLI usage header to `"SpendSight: Privacy-First Vendor-Level Spending Intelligence CLI"`.
+  * `src/python/app.py`: Updated Textual `TITLE` to `"SpendSight: Vendor-Level Spending Intelligence"`.
+  * `src/python/gui.py`: Updated top navigation header subtitle to `"Vendor-Level Spending Intelligence"`.
+  * Contracts & Docs: Synchronized `PRD.md`, `SPEC.md`, `README.md`, and `MANUAL.md`.
+* *Quality Gate:* Full test suites pass (`pytest`, `go test ./...`), `ruff` and `mypy` clean.
+
+
 
 
 

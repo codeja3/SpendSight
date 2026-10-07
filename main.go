@@ -127,7 +127,7 @@ func launchGUI() {
 }
 
 func printUsage() {
-	fmt.Println("SpendSight: Privacy-First Personal Finance CLI")
+	fmt.Println("SpendSight: Privacy-First Vendor-Level Spending Intelligence CLI")
 	fmt.Println("Usage: spendsight <command> [flags]")
 	fmt.Println("\nCommands:")
 	fmt.Println("  init       Initialize the SQLite database schema")
