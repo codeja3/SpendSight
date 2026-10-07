@@ -74,7 +74,7 @@ sequenceDiagram
 * **Technology:** Dual rendering engines sharing a unified Data Access Layer (`SpendSightDAL`):
   1. **CLI Terminal UI (`Textual`):** Keyboard-driven terminal dashboard launched via `spendsight dashboard` (or `uv run python -m src.python.app`).
   2. **Browser Web UI (`NiceGUI`):** Hybrid analytics-first local web dashboard (`spendsight gui` or `uv run python -m src.python.gui`) featuring:
-     - **Analytics Hub (Home View):** Executive KPI cards, full-width category ECharts breakdown, interactive category drill-down, and searchable vendor directory.
+     - **Analytics Hub (Home View):** Top ribbon featuring 2 vendor KPI metric cards (Active Vendors Tracked, Median Spend Per Vendor) and a 2/3-width smart adaptive Median Spend Development line graph (scaling month to quarter to annual), alongside category ECharts breakdowns, category drill-down, and searchable vendor directory.
      - **Contextual Slide-Out Drawer:** Instant transaction audit drawer for selected vendors/categories without losing place in analytics.
      - **Dedicated Full Ledger Tab:** Uncramped, full-width data grid for statement auditing and historical searching.
 * **Features:** Chronological ledger, Top/Bottom N spending summaries, category distribution charts, category drill-down, and a full searchable Vendor Directory tab.

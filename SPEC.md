@@ -158,6 +158,19 @@ class VendorDirectoryRow(BaseModel):
     total_spend: float
     primary_category: str
     last_active_date: str
+
+class ExecutiveKPIs(BaseModel):
+    active_vendors_count: int
+    median_spend_per_vendor: float
+
+class MedianSpendPoint(BaseModel):
+    period: str
+    median_spend: float
+    vendor_count: int
+
+class MedianSpendTrend(BaseModel):
+    granularity: str  # "month", "quarter", or "year"
+    points: list[MedianSpendPoint]
 ```
 
 ### 6.2 Feature Queries
@@ -216,6 +229,40 @@ Appends `AND LOWER(t.vendor) LIKE ?` with parameter `f"%{search.lower()}%"`.
 * **Expenses Only Filter:**
 When `expenses_only=True`, filters to `amount < 0` within the main table aggregation and subquery category resolution.
 * **DAL Signature:** `def get_vendor_directory(self, search: str | None = None, expenses_only: bool = False) -> list[VendorDirectoryRow]`
+
+**Feature 2.6: Executive KPIs**
+Calculates high-level vendor metrics for dashboard KPI cards.
+* **Query:** `SELECT SUM(amount) as total_spend FROM transactions WHERE vendor IS NOT NULL AND vendor != '' GROUP BY vendor`
+* **Metrics Derived:**
+  * `active_vendors_count`: Total number of distinct vendors (`len(rows)`).
+  * `median_spend_per_vendor`: `statistics.median([float(r["total_spend"]) for r in rows])` (or `0.0` if empty).
+* **DAL Signature:** `def get_executive_kpis(self) -> ExecutiveKPIs`
+
+**Feature 2.7: Vendor Transactions (Inspector Drawer)**
+Retrieves full chronological ledger rows for a specific vendor.
+* **Query:** `SELECT transaction_date AS date, vendor, category, amount FROM transactions WHERE vendor = ? ORDER BY transaction_date DESC`
+* **Parameters:** `vendor` (str)
+* **DAL Signature:** `def get_transactions_by_vendor(self, vendor: str) -> list[LedgerRow]`
+
+**Feature 2.8: Smart Median Spend Trend**
+Calculates historical vendor median spend over time, adapting temporal resolution.
+* **Temporal Resolution Logic:**
+  * If distinct months span $\le 24$, granularity = `"month"` (`YYYY-MM`).
+  * If distinct months span $> 24$ and quarters $\le 16$, granularity = `"quarter"` (`YYYY-Q1..Q4`).
+  * Otherwise, granularity = `"year"` (`YYYY`).
+* **Query:**
+```sql
+SELECT 
+    <period_expr> as period,
+    vendor,
+    SUM(amount) as vendor_spend
+FROM transactions
+WHERE transaction_date IS NOT NULL AND transaction_date != ''
+  AND vendor IS NOT NULL AND vendor != ''
+GROUP BY period, vendor
+ORDER BY period ASC
+```
+* **DAL Signature:** `def get_median_spend_trend(self) -> MedianSpendTrend`
 
 ### 6.3 Visual Layout & UI Components (Textual)
 
